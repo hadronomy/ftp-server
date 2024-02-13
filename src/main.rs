@@ -183,7 +183,8 @@ async fn handle_client(socket: (TcpStream, SocketAddr)) -> Result<()> {
 #[tokio::main]
 #[instrument]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt::init();
+    let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
+    tracing_subscriber::fmt().with_writer(non_blocking).init();
     let addr = SocketAddr::from(([127, 0, 0, 1], 2121));
     let listener = TcpListener::bind(addr)
         .await
