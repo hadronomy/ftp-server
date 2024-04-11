@@ -86,11 +86,6 @@ impl Default for App {
 
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let area = area.inner(&Margin {
-            horizontal: 1,
-            vertical: 1,
-        });
-
         Block::default()
             .borders(Borders::ALL)
             .title("FTP Server")

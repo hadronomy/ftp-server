@@ -7,6 +7,7 @@ use std::path::PathBuf;
 use std::str;
 use std::{net::SocketAddr, path::Path};
 
+use callsite::register;
 use crossterm::terminal;
 use crossterm::{
     event::{self, Event, KeyCode, KeyEventKind},
@@ -22,7 +23,7 @@ use tokio::{
     net::{TcpListener, TcpStream},
 };
 use tracing::*;
-use tracing_subscriber::fmt::MakeWriter;
+use tracing_subscriber::prelude::*;
 use tui_logger::Drain;
 
 use crate::app::*;
@@ -195,15 +196,20 @@ async fn handle_client(socket: (TcpStream, SocketAddr)) -> Result<()> {
 #[tokio::main]
 #[instrument]
 async fn main() -> Result<()> {
+    // let (non_blocking, _guard) = tracing_appender::non_blocking(io::stdout());
+    tracing_subscriber::registry()
+        .with(tui_logger::tracing_subscriber_layer())
+        // .with(tracing_subscriber::fmt::layer().with_writer(non_blocking))
+        .init();
+
+    error!("Starting FTP server");
+
     let mut terminal = init_terminal()?;
     terminal.hide_cursor().into_diagnostic()?;
     terminal.clear().into_diagnostic()?;
 
     let mut app = App::default();
     app.start(&mut terminal)?;
-
-    let (non_blocking, _guard) = tracing_appender::non_blocking(io::stdout());
-    tracing_subscriber::fmt().with_writer(non_blocking).init();
 
     restore_terminal()?;
     Ok(())
