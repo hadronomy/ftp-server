@@ -6,6 +6,7 @@ edition = "2021"
 
 [dependencies]
 color-eyre = "0.6.2"
+crossterm = "0.27.0"
 eyre = "0.6.8"
 libc = "0.2.147"
 miette = { version = "5.10.0", features = ["fancy"] }
@@ -14,8 +15,10 @@ nom-supreme = "0.8.0"
 num-derive = "0.4.0"
 num-integer = "0.1.45"
 num-traits = "0.2.16"
+ratatui = "0.26.1"
 thiserror = "1.0.48"
 tokio = { version = "1.32.0", features = ["full"] }
 tracing = "0.1.37"
 tracing-appender = "0.2.3"
 tracing-subscriber = { version = "0.3.17", features = ["fmt", "std"] }
+tui-logger = { version = "0.11.0", features = ["tracing", "tracing-subscriber", "crossterm", "tracing-support"] }
