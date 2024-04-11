@@ -101,7 +101,7 @@ impl Widget for &mut App {
             Layout::vertical([Constraint::Min(0), Constraint::Length(1)]).areas(area);
 
         let [left, _right] =
-            Layout::horizontal([Constraint::Fill(50), Constraint::Fill(50)]).areas(body);
+            Layout::horizontal([Constraint::Fill(75), Constraint::Fill(25)]).areas(body);
 
         TuiLoggerSmartWidget::default().render(left, buf);
 
