@@ -2,21 +2,12 @@ mod app;
 mod ftp;
 mod parser;
 
-use std::io::{self, stdout};
 use std::path::PathBuf;
 use std::str;
 use std::{net::SocketAddr, path::Path};
 
-use callsite::register;
-use crossterm::terminal;
-use crossterm::{
-    event::{self, Event, KeyCode, KeyEventKind},
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    ExecutableCommand,
-};
 use miette::*;
 use num_integer::Integer;
-use ratatui::{prelude::*, style::palette::tailwind, widgets::*};
 use tokio::{
     fs::File,
     io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader},
@@ -24,7 +15,6 @@ use tokio::{
 };
 use tracing::*;
 use tracing_subscriber::prelude::*;
-use tui_logger::Drain;
 
 use crate::app::*;
 use crate::ftp::*;
