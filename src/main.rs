@@ -192,7 +192,7 @@ async fn main() -> Result<()> {
         // .with(tracing_subscriber::fmt::layer().with_writer(non_blocking))
         .init();
 
-    error!("Starting FTP server");
+    info!("Starting FTP server");
 
     let mut terminal = init_terminal()?;
     terminal.hide_cursor().into_diagnostic()?;
