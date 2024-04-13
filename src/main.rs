@@ -210,6 +210,7 @@ async fn main() -> Result<()> {
 
     let mut app = App::default();
     app.start(&mut terminal)?;
+    terminal.show_cursor().into_diagnostic()?;
 
     restore_terminal()?;
     Ok(())

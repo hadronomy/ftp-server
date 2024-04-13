@@ -4,16 +4,14 @@ use std::{
     thread,
 };
 
-use color_eyre::owo_colors::OwoColorize;
 use crossterm::{
     event::{self, *},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    ExecutableCommand,
 };
 use miette::*;
 use ratatui::{prelude::*, widgets::*};
-use tracing::trace;
+use tracing::{info, trace};
 use tui_logger::*;
 
 pub struct App {
@@ -33,13 +31,14 @@ pub enum AppEvent {
 
 impl App {
     pub fn new() -> Self {
-        Self { mode: AppMode::Run }
+        Self {
+            mode: AppMode::default(),
+        }
     }
 
     pub fn start(&mut self, terminal: &mut Terminal<impl Backend>) -> Result<()> {
         let (tx, rx) = mpsc::channel();
         let event_tx = tx.clone();
-
         thread::spawn(move || input_thread(event_tx));
         // thread::spawn(move || progress_task(progress_tx).unwrap());
         // thread::spawn(move || background_task());
@@ -52,7 +51,9 @@ impl App {
         terminal: &mut Terminal<impl Backend>,
         rx: mpsc::Receiver<AppEvent>,
     ) -> Result<()> {
+        self.draw(terminal)?;
         for event in rx {
+            trace!("Event received");
             match event {
                 AppEvent::UIEvent(event) => {
                     if let Event::Key(key) = event {
