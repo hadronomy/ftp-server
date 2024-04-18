@@ -1,9 +1,10 @@
 mod app;
+mod cli;
 mod ftp;
 mod parser;
 
 use std::path::PathBuf;
-use std::str;
+use std::{io, str};
 use std::{net::SocketAddr, path::Path};
 
 use miette::*;
@@ -17,6 +18,7 @@ use tracing::*;
 use tracing_subscriber::prelude::*;
 
 use crate::app::*;
+use crate::cli::*;
 use crate::ftp::*;
 use crate::parser::*;
 
@@ -183,41 +185,47 @@ async fn handle_client(socket: (TcpStream, SocketAddr)) -> Result<()> {
     Ok(())
 }
 
-
-
 #[tokio::main]
 #[instrument]
 async fn main() -> Result<()> {
-    // let (non_blocking, _guard) = tracing_appender::non_blocking(io::stdout());
+    if let Some(cli) = Args::init_cli() {
+        if cli.interactive {
+            tracing_subscriber::registry()
+                .with(tui_logger::tracing_subscriber_layer())
+                .init();
 
-    tracing_subscriber::registry()
-        .with(
-            tui_logger::tracing_subscriber_layer()
-        )
-        .init();
+            info!("Starting FTP server");
 
-    info!("Starting FTP server");
+            let mut terminal = init_terminal()?;
+            terminal.hide_cursor().into_diagnostic()?;
+            terminal.clear().into_diagnostic()?;
 
-    let mut terminal = init_terminal()?;
-    terminal.hide_cursor().into_diagnostic()?;
-    terminal.clear().into_diagnostic()?;
+            let mut app = App::default();
+            app.start(&mut terminal)?;
+            terminal.show_cursor().into_diagnostic()?;
 
-    let mut app = App::default();
-    app.start(&mut terminal)?;
-    terminal.show_cursor().into_diagnostic()?;
+            restore_terminal()?;
+        } else {
+            let (non_blocking, _guard) = tracing_appender::non_blocking(io::stdout());
+            tracing_subscriber::registry()
+                .with(tracing_subscriber::fmt::layer().with_writer(non_blocking))
+                .init();
 
-    restore_terminal()?;
+            let addr = SocketAddr::from(([127, 0, 0, 1], 2121));
+            let listener = TcpListener::bind(addr)
+                .await
+                .unwrap_or_else(|_| panic!("Could not bind to address {}", addr));
+
+            info!("Listening to addr {}", addr);
+
+            loop {
+                let socket = listener
+                    .accept()
+                    .await
+                    .expect("Error accepting connection to socket");
+                tokio::spawn(async move { handle_client(socket).await });
+            }
+        }
+    }
     Ok(())
-    // let addr = SocketAddr::from(([127, 0, 0, 1], 2121));
-    // let listener = TcpListener::bind(addr)
-    //     .await
-    //     .unwrap_or_else(|_| panic!("Could not bind to address {}", addr));
-    // info!("Listening to addr {}", addr);
-    // loop {
-    //     let socket = listener
-    //         .accept()
-    //         .await
-    //         .expect("Error accepting connection to socket");
-    //     tokio::spawn(async move { handle_client(socket).await });
-    // }
 }
