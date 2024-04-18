@@ -11,7 +11,7 @@ use crossterm::{
 };
 use miette::*;
 use ratatui::{prelude::*, widgets::*};
-use tracing::{info, trace};
+use tracing::trace;
 use tui_logger::*;
 
 pub struct App {
