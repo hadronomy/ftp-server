@@ -183,13 +183,17 @@ async fn handle_client(socket: (TcpStream, SocketAddr)) -> Result<()> {
     Ok(())
 }
 
+
+
 #[tokio::main]
 #[instrument]
 async fn main() -> Result<()> {
     // let (non_blocking, _guard) = tracing_appender::non_blocking(io::stdout());
+
     tracing_subscriber::registry()
-        .with(tui_logger::tracing_subscriber_layer())
-        // .with(tracing_subscriber::fmt::layer().with_writer(non_blocking))
+        .with(
+            tui_logger::tracing_subscriber_layer()
+        )
         .init();
 
     info!("Starting FTP server");
