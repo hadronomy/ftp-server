@@ -4,7 +4,7 @@ use termimad::ansi;
 
 static INTRO: &str = "
 
-An interactive FTPServer
+*ftpy* is an interactive FTPServer
 
 ";
 
