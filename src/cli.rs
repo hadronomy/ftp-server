@@ -22,11 +22,14 @@ pub struct Args {
 
 /// Implements the `Args` struct and its associated methods.
 impl Args {
-    /// Initializes the command-line interface (CLI) and returns an `Option<Self>` object.
+    /// Initializes the command-line interface (CLI) and returns an `Option<Args>` object.
+    /// ```
+    /// let args = Args::init_cli();
+    /// ```
     ///
     /// # Returns
     ///
-    /// - `Some(Self)`: If the CLI arguments were successfully parsed.
+    /// - `Some(Args)`: If the CLI arguments were successfully parsed.
     /// - `None`: If the `help` flag is set, the help message is printed and `None` is returned.
     pub fn init_cli() -> Option<Self> {
         let args = Self::parse();
@@ -37,6 +40,10 @@ impl Args {
         Some(args)
     }
 
+    /// Prints the help message for the CLI.
+    ///
+    /// The help message is styled using the `clap-help` and
+    /// the `termimad` crates.
     pub fn print_help() {
         let mut printer = Printer::new(Args::command())
             .with("introduction", INTRO)
