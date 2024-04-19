@@ -18,6 +18,10 @@ pub struct Args {
     /// Interactive mode, that is, the cool mode
     #[arg(short, long)]
     pub interactive: bool,
+
+    #[cfg_attr(debug_assertions, arg(short, long, default_value = "2121"))]
+    #[cfg_attr(not(debug_assertions), arg(short, long, default_value = "21"))]
+    pub port: u16,
 }
 
 /// Implements the `Args` struct and its associated methods.

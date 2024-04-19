@@ -211,7 +211,7 @@ async fn main() -> Result<()> {
                 .with(tracing_subscriber::fmt::layer().with_writer(non_blocking))
                 .init();
 
-            let addr = SocketAddr::from(([127, 0, 0, 1], 2121));
+            let addr = SocketAddr::from(([127, 0, 0, 1], cli.port));
             let listener = TcpListener::bind(addr)
                 .await
                 .unwrap_or_else(|_| panic!("Could not bind to address {}", addr));
