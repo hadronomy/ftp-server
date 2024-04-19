@@ -190,7 +190,7 @@ async fn handle_client(socket: (TcpStream, SocketAddr)) -> Result<()> {
 async fn main() -> Result<()> {
     if let Some(cli) = Args::init_cli() {
         let (non_blocking, _guard) = tracing_appender::non_blocking(io::stdout());
-        
+
         if cli.interactive {
             tracing_subscriber::registry()
                 .with(tui_logger::tracing_subscriber_layer())
@@ -202,7 +202,7 @@ async fn main() -> Result<()> {
         }
 
         if cfg!(debug_assertions) {
-            warn!("Running in debug mode")
+            warn!("You are currently running a debug build");
         }
 
         if cli.interactive {
