@@ -189,11 +189,23 @@ async fn handle_client(socket: (TcpStream, SocketAddr)) -> Result<()> {
 #[instrument]
 async fn main() -> Result<()> {
     if let Some(cli) = Args::init_cli() {
+        let (non_blocking, _guard) = tracing_appender::non_blocking(io::stdout());
+        
         if cli.interactive {
             tracing_subscriber::registry()
                 .with(tui_logger::tracing_subscriber_layer())
                 .init();
+        } else {
+            tracing_subscriber::registry()
+                .with(tracing_subscriber::fmt::layer().with_writer(non_blocking))
+                .init();
+        }
 
+        if cfg!(debug_assertions) {
+            warn!("Running in debug mode")
+        }
+
+        if cli.interactive {
             info!("Starting FTP server");
 
             let mut terminal = init_terminal()?;
@@ -206,11 +218,6 @@ async fn main() -> Result<()> {
 
             restore_terminal()?;
         } else {
-            let (non_blocking, _guard) = tracing_appender::non_blocking(io::stdout());
-            tracing_subscriber::registry()
-                .with(tracing_subscriber::fmt::layer().with_writer(non_blocking))
-                .init();
-
             let addr = SocketAddr::from(([127, 0, 0, 1], cli.port));
             let listener = TcpListener::bind(addr)
                 .await
