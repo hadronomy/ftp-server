@@ -6,6 +6,8 @@ static INTRO: &str = "
 
 *ftpy* is an interactive FTPServer
 
+> **NOTE**: This is a work in progress and is not yet fully functional.
+
 ";
 
 #[derive(Parser, Debug)]
