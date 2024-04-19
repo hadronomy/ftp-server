@@ -223,7 +223,7 @@ async fn main() -> Result<()> {
                 .await
                 .unwrap_or_else(|_| panic!("Could not bind to address {}", addr));
 
-            info!("Listening to addr {}", addr);
+            info!("Listening to address {}", addr);
 
             loop {
                 let socket = listener
