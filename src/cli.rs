@@ -21,6 +21,7 @@ pub struct Args {
     #[arg(short, long)]
     pub interactive: bool,
 
+    /// The port to listen on
     #[cfg_attr(debug_assertions, arg(short, long, default_value = "2121"))]
     #[cfg_attr(not(debug_assertions), arg(short, long, default_value = "21"))]
     pub port: u16,
