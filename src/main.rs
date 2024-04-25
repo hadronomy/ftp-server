@@ -90,7 +90,19 @@ async fn handle_client(socket: (TcpStream, SocketAddr)) -> Result<()> {
                     .write(StatusCode::CmdNotImplemented.to_string().as_bytes())
                     .await
                     .into_diagnostic()?;
-            }
+            },
+            "FEAT" => {
+                write_stream
+                    .write(StatusCode::CmdNotImplemented.to_string().as_bytes())
+                    .await
+                    .into_diagnostic()?;
+            },
+            "SIZE" => {
+                write_stream
+                    .write(StatusCode::CmdNotImplemented.to_string().as_bytes())
+                    .await
+                    .into_diagnostic()?;
+            },
             "PASV" => {
                 let data_addr = SocketAddr::from(([127, 0, 0, 1], 2222));
                 let data_port = data_addr.port();
@@ -128,7 +140,12 @@ async fn handle_client(socket: (TcpStream, SocketAddr)) -> Result<()> {
                     .await
                     .into_diagnostic()?;
             }
-            "RETR" => {}
+            "RETR" => {
+                write_stream
+                    .write(StatusCode::DataOpenTransfer.to_string().as_bytes())
+                    .await
+                    .into_diagnostic()?;
+            }
             "NOOP" => {
                 stream.shutdown().await.into_diagnostic()?;
                 break;
@@ -175,7 +192,12 @@ async fn handle_client(socket: (TcpStream, SocketAddr)) -> Result<()> {
                     .await
                     .into_diagnostic()?;
             }
-            &_ => {}
+            &_ => {
+                write_stream
+                    .write(StatusCode::CmdNotImplemented.to_string().as_bytes())
+                    .await
+                    .into_diagnostic()?;
+            }
         }
         debug!("Clearing buffer");
         buf.clear();
