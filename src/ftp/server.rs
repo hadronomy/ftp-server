@@ -1,17 +1,12 @@
+use std::{borrow::BorrowMut, net::SocketAddr, str, sync::Arc};
+
 use miette::*;
 use num_integer::Integer;
-use std::{
-    borrow::{Borrow, BorrowMut},
-    io,
-    net::SocketAddr,
-    str,
-    sync::Arc,
-};
 use tokio::{
     fs::File,
-    io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader, BufStream},
+    io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader},
     net::{tcp::WriteHalf, TcpListener, TcpStream},
-    sync::{broadcast, Mutex},
+    sync::Mutex,
 };
 use tracing::*;
 
