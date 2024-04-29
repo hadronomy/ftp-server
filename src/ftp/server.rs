@@ -4,7 +4,7 @@ use miette::*;
 use num_integer::Integer;
 use tokio::{
     fs::File,
-    io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader},
+    io::{AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, BufReader},
     net::{tcp::WriteHalf, TcpListener, TcpStream},
     sync::Mutex,
 };
@@ -264,16 +264,50 @@ pub struct DataConnection {
 
 impl DataConnection {
     pub async fn send(&mut self, data: &[u8]) -> Result<()> {
-        self.socket.write_all(data).await.into_diagnostic()?;
-        self.socket.shutdown().await.into_diagnostic()?;
+        self.write_all(data).await.into_diagnostic()?;
+        self.shutdown().await.into_diagnostic()?;
         Ok(())
     }
 
     pub async fn receive(&mut self) -> Result<Vec<u8>> {
-        let mut reader = BufReader::new(&mut self.socket);
+        let mut reader = BufReader::new(self);
         let mut buf = Vec::new();
         reader.read_until(b'\0', &mut buf).await.into_diagnostic()?;
         Ok(buf)
+    }
+}
+
+impl AsyncWrite for DataConnection {
+    fn poll_write(
+        self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+        buf: &[u8],
+    ) -> std::task::Poll<std::io::Result<usize>> {
+        std::pin::Pin::new(&mut self.get_mut().socket).poll_write(cx, buf)
+    }
+
+    fn poll_flush(
+        self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<std::io::Result<()>> {
+        std::pin::Pin::new(&mut self.get_mut().socket).poll_flush(cx)
+    }
+
+    fn poll_shutdown(
+        self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<std::io::Result<()>> {
+        std::pin::Pin::new(&mut self.get_mut().socket).poll_shutdown(cx)
+    }
+}
+
+impl AsyncRead for DataConnection {
+    fn poll_read(
+        self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+        buf: &mut tokio::io::ReadBuf<'_>,
+    ) -> std::task::Poll<std::io::Result<()>> {
+        std::pin::Pin::new(&mut self.get_mut().socket).poll_read(cx, buf)
     }
 }
 
