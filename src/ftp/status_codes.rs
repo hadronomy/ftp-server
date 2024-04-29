@@ -5,6 +5,16 @@ use thiserror::*;
 
 use crate::types::SystemType;
 
+/// Status codes for FTP
+/// 
+/// # Example
+/// ```
+/// use ftp::StatusCode;
+/// 
+/// let status_code = StatusCode::Ok;
+/// assert_eq!(status_code.code(), 200);
+/// ```
+/// 
 #[derive(Debug, Clone)]
 pub enum StatusCode {
     /// **110** - Restart marker reply.
@@ -131,6 +141,7 @@ pub enum StatusCode {
 }
 
 impl StatusCode {
+    /// Returns the code of this [`StatusCode`].
     pub fn code(&self) -> u16 {
         match self {
             StatusCode::RestartMarkerReply => 110,

@@ -1,3 +1,19 @@
+//! This module contains the implementation of an FTP server.
+//!
+//! The `FTPServer` struct represents an FTP server that listens for incoming connections
+//! and handles client requests. It has a `listen` method that starts the server and
+//! accepts new connections. Each new connection is handled by the `Connection` struct.
+//!
+//! The `Connection` struct represents a client connection to the FTP server. It handles
+//! the communication with the client, executing commands and sending responses. It also
+//! manages the data connection for file transfers.
+//!
+//! The `DataConnection` struct represents a data connection for sending and receiving data.
+//! It is used by the `Connection` struct for file transfers.
+//!
+//! The code also includes various helper functions and enums for handling FTP commands,
+//! status codes, and system types.
+
 use std::{borrow::BorrowMut, net::SocketAddr, str, sync::Arc};
 
 use miette::*;
@@ -262,13 +278,28 @@ pub struct DataConnection {
     socket: TcpStream,
 }
 
+/// Represents a data connection for sending and receiving data.
 impl DataConnection {
+    /// Sends the provided data over the data connection.
+    ///
+    /// # Arguments
+    ///
+    /// * `data` - The data to be sent as a slice of bytes.
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` indicating success or failure.
     pub async fn send(&mut self, data: &[u8]) -> Result<()> {
         self.write_all(data).await.into_diagnostic()?;
         self.shutdown().await.into_diagnostic()?;
         Ok(())
     }
 
+    /// Receives data from the data connection.
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` containing the received data as a vector of bytes.
     pub async fn receive(&mut self) -> Result<Vec<u8>> {
         let mut reader = BufReader::new(self);
         let mut buf = Vec::new();
