@@ -51,6 +51,9 @@ pub enum StatusCode {
     /// **220** - Service ready for new user.
     ServiceReadyUser,
 
+    /// **221** - Service closing control connection.
+    ServiceClosingControlConn,
+
     /// **225** - Data connection open; no transfer in progress.
     DataOpenNoTransfer,
 
@@ -142,6 +145,7 @@ impl StatusCode {
             StatusCode::HelpMsg { message: _ } => 214,
             StatusCode::SystemType(_) => 215,
             StatusCode::ServiceReadyUser => 220,
+            StatusCode::ServiceClosingControlConn => 221,
             StatusCode::DataOpenNoTransfer => 225,
             StatusCode::ClosingDataConn => 226,
             StatusCode::EnteringPassiveMode {
@@ -204,16 +208,19 @@ impl ToString for StatusCode {
                 self.code()
             ),
             StatusCode::FileStatusOk => todo!(),
-            StatusCode::Ok => format!("{} Ok", self.code()),
+            StatusCode::Ok => format!("{} Ok\n", self.code()),
             StatusCode::SuperfluousCmdNotImplemented => todo!(),
             StatusCode::SystemStatus => todo!(),
             StatusCode::DirectoryStatus => todo!(),
             StatusCode::FileStatus => todo!(),
             StatusCode::HelpMsg { message } => format!("{} {}\n", self.code(), message),
             StatusCode::SystemType(system_type) => {
-                format!("{} {} system type\n", self.code(), system_type.to_string())
+                format!("{} {}\n", self.code(), system_type.to_string())
             }
             StatusCode::ServiceReadyUser => format!("{} Service ready for new user\n", self.code()),
+            StatusCode::ServiceClosingControlConn => {
+                format!("{} Service closing control connection\n", self.code())
+            }
             StatusCode::DataOpenNoTransfer => format!("{} Data connection open\n", self.code()),
             StatusCode::ClosingDataConn => format!("{} Closing data connection\n", self.code()),
             StatusCode::EnteringPassiveMode {
@@ -227,9 +234,11 @@ impl ToString for StatusCode {
             StatusCode::FileActionOk => {
                 format!("{} Requested file action okay, completed\n", self.code())
             }
-            StatusCode::PathCreated => todo!(),
+            StatusCode::PathCreated => {
+                format!("{} \"PATHNAME\" created\n", self.code())
+            }
             StatusCode::UsernameOk => todo!(),
-            StatusCode::NeedLoginAccount => todo!(),
+            StatusCode::NeedLoginAccount => format!("{} Need account for login\n", self.code()),
             StatusCode::FileActionPending => todo!(),
             StatusCode::Unnavaidable => todo!(),
             StatusCode::CantOpenDataConn => todo!(),

@@ -19,14 +19,14 @@ impl From<SystemType> for System {
                 features: &["SIZE", "MDTM", "UTF8"],
             },
             SystemType::Linux => Self {
-                name: "LINUX Type: L8",
+                name: "UNIX Type: L8",
                 features: &["SIZE", "MDTM", "UTF8"],
             },
             SystemType::Android => Self {
                 name: "Android Type: L8",
                 features: &["SIZE", "MDTM", "UTF8"],
             },
-            SystemType::IOS => Self {
+            SystemType::Ios => Self {
                 name: "IOS Type: L8",
                 features: &["SIZE", "MDTM", "UTF8"],
             },
@@ -40,8 +40,7 @@ impl From<SystemType> for System {
 
 impl ToString for System {
     fn to_string(&self) -> String {
-        let features = self.features.join("\n");
-        format!("{}\n{}", self.name, features)
+        self.name.to_string()
     }
 }
 
@@ -52,7 +51,7 @@ pub enum SystemType {
     MacOS,
     Linux,
     Android,
-    IOS,
+    Ios,
     Unknown,
 }
 
@@ -63,7 +62,7 @@ impl SystemType {
             "macos" => Self::MacOS,
             "windows" => Self::Windows,
             "android" => Self::Android,
-            "ios" => Self::IOS,
+            "ios" => Self::Ios,
             _ => Self::Unknown,
         }
     }
