@@ -90,19 +90,19 @@ async fn handle_client(socket: (TcpStream, SocketAddr)) -> Result<()> {
                     .write(StatusCode::CmdNotImplemented.to_string().as_bytes())
                     .await
                     .into_diagnostic()?;
-            },
+            }
             "FEAT" => {
                 write_stream
                     .write(StatusCode::CmdNotImplemented.to_string().as_bytes())
                     .await
                     .into_diagnostic()?;
-            },
+            }
             "SIZE" => {
                 write_stream
                     .write(StatusCode::CmdNotImplemented.to_string().as_bytes())
                     .await
                     .into_diagnostic()?;
-            },
+            }
             "PASV" => {
                 let data_addr = SocketAddr::from(([127, 0, 0, 1], 2222));
                 let data_port = data_addr.port();
@@ -241,19 +241,8 @@ async fn main() -> Result<()> {
             restore_terminal()?;
         } else {
             let addr = SocketAddr::from(([127, 0, 0, 1], cli.port));
-            let listener = TcpListener::bind(addr)
-                .await
-                .unwrap_or_else(|_| panic!("Could not bind to address {}", addr));
-
-            info!("Listening to address {}", addr);
-
-            loop {
-                let socket = listener
-                    .accept()
-                    .await
-                    .expect("Error accepting connection to socket");
-                tokio::spawn(async move { handle_client(socket).await });
-            }
+            let mut server = FTPServer::from(addr);
+            server.listen().await?;
         }
     }
     Ok(())

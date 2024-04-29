@@ -3,6 +3,8 @@ use std::net::SocketAddr;
 use miette::*;
 use thiserror::*;
 
+use crate::types::SystemType;
+
 #[derive(Debug, Clone)]
 pub enum StatusCode {
     /// **110** - Restart marker reply.
@@ -44,7 +46,7 @@ pub enum StatusCode {
 
     /// **215** - NAME system type.
     /// Where NAME is an official system name from the list in the Assigned Numbers document.
-    SystemType,
+    SystemType(SystemType),
 
     /// **220** - Service ready for new user.
     ServiceReadyUser,
@@ -138,7 +140,7 @@ impl StatusCode {
             StatusCode::DirectoryStatus => 212,
             StatusCode::FileStatus => 213,
             StatusCode::HelpMsg { message: _ } => 214,
-            StatusCode::SystemType => 215,
+            StatusCode::SystemType(_) => 215,
             StatusCode::ServiceReadyUser => 220,
             StatusCode::DataOpenNoTransfer => 225,
             StatusCode::ClosingDataConn => 226,
@@ -208,7 +210,9 @@ impl ToString for StatusCode {
             StatusCode::DirectoryStatus => todo!(),
             StatusCode::FileStatus => todo!(),
             StatusCode::HelpMsg { message } => format!("{} {}\n", self.code(), message),
-            StatusCode::SystemType => todo!(),
+            StatusCode::SystemType(system_type) => {
+                format!("{} {} system type\n", self.code(), system_type.to_string())
+            }
             StatusCode::ServiceReadyUser => format!("{} Service ready for new user\n", self.code()),
             StatusCode::DataOpenNoTransfer => format!("{} Data connection open\n", self.code()),
             StatusCode::ClosingDataConn => format!("{} Closing data connection\n", self.code()),
@@ -219,7 +223,7 @@ impl ToString for StatusCode {
                 "{} Entering Passive Mode (127, 0, 0, 1, {port_high}, {port_low})\n",
                 self.code()
             ),
-            StatusCode::UserLoggedIn => todo!(),
+            StatusCode::UserLoggedIn => "230 User logged in, proceed\n".to_string(),
             StatusCode::FileActionOk => {
                 format!("{} Requested file action okay, completed\n", self.code())
             }
