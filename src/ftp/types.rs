@@ -1,6 +1,5 @@
 pub struct System {
     name: &'static str,
-    features: &'static [&'static str],
 }
 
 impl From<SystemType> for System {
@@ -8,31 +7,22 @@ impl From<SystemType> for System {
         match system {
             SystemType::Unix => Self {
                 name: "UNIX Type: L8",
-                features: &["SIZE", "MDTM", "UTF8"],
             },
-            SystemType::Windows => Self {
-                name: "Windows_NT",
-                features: &["SIZE", "MDTM", "UTF8"],
-            },
+            SystemType::Windows => Self { name: "Windows_NT" },
             SystemType::MacOS => Self {
                 name: "MACOS Type: L8",
-                features: &["SIZE", "MDTM", "UTF8"],
             },
             SystemType::Linux => Self {
                 name: "UNIX Type: L8",
-                features: &["SIZE", "MDTM", "UTF8"],
             },
             SystemType::Android => Self {
                 name: "Android Type: L8",
-                features: &["SIZE", "MDTM", "UTF8"],
             },
             SystemType::Ios => Self {
                 name: "IOS Type: L8",
-                features: &["SIZE", "MDTM", "UTF8"],
             },
             SystemType::Unknown => Self {
                 name: "Unknown Type: L8",
-                features: &["SIZE", "MDTM", "UTF8"],
             },
         }
     }

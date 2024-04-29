@@ -260,38 +260,6 @@ impl ToString for StatusCode {
     }
 }
 
-#[derive(Debug, Default)]
-pub enum DataConnectionType {
-    #[default]
-    Active,
-    Passive,
-}
-
-#[derive(Debug)]
-pub struct DataConnection {
-    conn_type: DataConnectionType,
-    address: SocketAddr,
-}
-
-pub struct ClientConnection {
-    data_connection: Option<DataConnection>,
-}
-
-impl ClientConnection {
-    pub fn new() -> Self {
-        Self {
-            data_connection: None,
-        }
-    }
-}
-
-#[derive(Error, Debug, Diagnostic)]
-pub enum CommandError {
-    #[error("invalid arguments")]
-    #[diagnostic(code(ftp::command::invalid_arguments))]
-    InvalidArguments,
-}
-
 /// The FTP commands
 ///
 /// See [RFC 959](https://tools.ietf.org/html/rfc959)
@@ -370,7 +338,7 @@ pub enum Command<'a> {
 }
 
 impl<'a> Command<'a> {
-    pub fn run(&self) -> Result<StatusCode, CommandError> {
+    pub fn run(&self) -> Result<StatusCode> {
         match self {
             Command::User(_) => todo!(),
             Command::Pass(_) => todo!(),
