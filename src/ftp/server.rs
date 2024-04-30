@@ -147,7 +147,7 @@ impl Connection {
         writer: &mut WriteHalf<'a>,
     ) -> Result<Option<StatusCode>> {
         match cmd {
-            "USER" => Ok(Some(StatusCode::UserLoggedIn)),
+            "USER" => Ok(Some(StatusCode::NeedLoginAccount)),
             "PASS" => Ok(Some(StatusCode::UserLoggedIn)),
             "SYST" => Ok(Some(StatusCode::SystemType(SystemType::from_os()))),
             "FEAT" => Ok(Some(StatusCode::CmdNotImplemented)),
