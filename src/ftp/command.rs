@@ -1,111 +1,82 @@
 use miette::*;
 
 use crate::ftp::StatusCode;
+use crate::Connection;
+
+pub trait Runnable {
+    fn run(&self, connection: &mut Connection) -> Result<StatusCode>;
+}
+
+pub trait FTPCommand<'a>
+where
+    Self: TryFrom<(&'a str, Vec<&'a str>)>,
+{
+    const KEYWORD: &'static str;
+
+    fn execute(&self, connection: &mut Connection) -> Result<StatusCode>;
+
+    fn is_keyword(&self, command: &str) -> bool {
+        command == Self::KEYWORD
+    }
+}
+
+impl<'a, T> Runnable for T
+where
+    T: FTPCommand<'a>,
+{
+    fn run(&self, connection: &mut Connection) -> Result<StatusCode> {
+        self.execute(connection)
+    }
+}
+
+struct User<'a>(&'a str);
+
+impl<'a> FTPCommand<'a> for User<'a> {
+    const KEYWORD: &'static str = "USER";
+
+    fn execute(&self, _connection: &mut Connection) -> Result<StatusCode> {
+        Ok(StatusCode::UserLoggedIn)
+    }
+}
+
+impl<'a> TryFrom<(&'a str, Vec<&'a str>)> for User<'a> {
+    type Error = miette::Error;
+
+    fn try_from((command, args): (&'a str, Vec<&'a str>)) -> Result<Self> {
+        if command == Self::KEYWORD {
+            if args.len() == 1 {
+                Ok(Self(args[0]))
+            } else {
+                Err(miette!("Invalid number of arguments"))
+            }
+        } else {
+            Err(miette!("Invalid command"))
+        }
+    }
+}
 
 /// The FTP commands
 ///
 /// See [RFC 959](https://tools.ietf.org/html/rfc959)
-pub enum Command<'a> {
-    /// **USER** - Specify user for authentication
-    User(&'a str),
-
-    /// **PASS** - Specify password for authentication
-    Pass(&'a str),
-
-    /// **CWD** - Change working directory
-    Cwd(&'a str),
-
-    /// **CDUP** - Change to parent directory
-    Cdup,
-
-    /// **QUIT** - Disconnection
-    Quit,
-
-    /// **PORT** - Data port
-    Port,
-
-    /// **PASV** - Passive mode
-    Pasv,
-
-    /// **TYPE** - Representation type
-    Type,
-
-    /// **MODE** - Transfer mode
-    Mode,
-
-    /// **STRU** - File structure
-    Stru,
-
-    /// **RETR** - Retrieve a copy of the file
-    Retr,
-
-    /// **STOR** - Store a file
-    Stor,
-
-    /// **NOOP** - Do nothing
-    Noop,
-
-    /// **SYST** - Get operating system type
-    Syst,
-
-    /// **STAT** - Get data connection status
-    Stat,
-
-    /// **HELP** - Help
-    Help,
-
-    /// **DELE** - Delete file
-    Dele,
-
-    /// **RMD** - Remove directory
-    Rmd,
-
-    /// **MKD** - Make directory
-    Mkd,
-
-    /// **PWD** - Print working directory
-    Pwd,
-
-    /// **LIST** - List files
-    List,
-
-    /// **NLST** - Name list of files
-    Nlst,
-
-    /// **SITE** -
-    Site,
-
-    /// **Unknown** - Unknown command
-    Unknown,
+enum Command<'a> {
+    User(User<'a>),
 }
 
-impl<'a> Command<'a> {
-    pub fn run(&self) -> Result<StatusCode> {
+impl<'a> Runnable for Command<'a> {
+    fn run(&self, connection: &mut Connection) -> Result<StatusCode> {
         match self {
-            Command::User(_) => todo!(),
-            Command::Pass(_) => todo!(),
-            Command::Cwd(_) => todo!(),
-            Command::Cdup => todo!(),
-            Command::Quit => todo!(),
-            Command::Port => todo!(),
-            Command::Pasv => todo!(),
-            Command::Type => todo!(),
-            Command::Mode => todo!(),
-            Command::Stru => todo!(),
-            Command::Retr => todo!(),
-            Command::Stor => todo!(),
-            Command::Noop => todo!(),
-            Command::Syst => todo!(),
-            Command::Stat => todo!(),
-            Command::Help => todo!(),
-            Command::Dele => todo!(),
-            Command::Rmd => todo!(),
-            Command::Mkd => todo!(),
-            Command::Pwd => todo!(),
-            Command::List => todo!(),
-            Command::Nlst => todo!(),
-            Command::Site => todo!(),
-            Command::Unknown => todo!(),
+            Command::User(user) => user.run(connection),
+        }
+    }
+}
+
+impl<'a> TryFrom<(&'a str, Vec<&'a str>)> for Command<'a> {
+    type Error = miette::Error;
+
+    fn try_from((command, args): (&'a str, Vec<&'a str>)) -> Result<Self> {
+        match command {
+            User::KEYWORD => Ok(Command::User(User::try_from((command, args))?)),
+            _ => Err(miette!("Invalid command")),
         }
     }
 }
