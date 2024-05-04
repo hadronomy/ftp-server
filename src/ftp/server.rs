@@ -17,17 +17,16 @@
 use std::{borrow::BorrowMut, net::SocketAddr, str, sync::Arc};
 
 use miette::*;
-use num_integer::Integer;
+
 use tokio::{
-    fs::File,
-    io::{AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, BufReader},
+    io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader},
     net::{tcp::WriteHalf, TcpListener, TcpStream},
     sync::Mutex,
 };
 use tracing::*;
 
-use crate::parser::cmd_parser;
-use crate::{StatusCode, SystemType};
+use crate::StatusCode;
+use crate::{parser::cmd_parser, Command};
 
 #[derive(Debug, Clone)]
 pub struct FTPServer {
@@ -79,9 +78,9 @@ impl From<SocketAddr> for FTPServer {
 
 #[derive(Debug, Clone)]
 pub struct Connection {
-    socket: Arc<Mutex<TcpStream>>,
-    passive_addr: SocketAddr,
-    data_connection: Option<Arc<Mutex<DataConnection>>>,
+    pub(crate) socket: Arc<Mutex<TcpStream>>,
+    pub(crate) passive_addr: SocketAddr,
+    pub(crate) data_connection: Option<Arc<Mutex<DataConnection>>>,
     // receiver: Arc<Mutex<broadcast::Receiver<String>>>,
 }
 
@@ -146,129 +145,10 @@ impl Connection {
         args: Vec<&str>,
         writer: &mut WriteHalf<'a>,
     ) -> Result<Option<StatusCode>> {
-        match cmd {
-            "USER" => Ok(Some(StatusCode::NeedLoginAccount)),
-            "PASS" => Ok(Some(StatusCode::UserLoggedIn)),
-            "SYST" => Ok(Some(StatusCode::SystemType(SystemType::from_os()))),
-            "FEAT" => Ok(Some(StatusCode::CmdNotImplemented)),
-            "SIZE" => Ok(Some(StatusCode::CmdNotImplemented)),
-            "PASV" => {
-                let data_addr = self.passive_addr;
-                let data_port = data_addr.port();
-                let (port_high, port_low) = data_port.div_rem(&256);
-                let data_listener = TcpListener::bind(data_addr)
-                    .await
-                    .unwrap_or_else(|_| panic!("Could not bind to address {}", data_addr));
-                // let cwd = cwd.clone();
-                trace!("Data connection listener bound to {}", data_addr);
-
-                writer
-                    .write(
-                        StatusCode::EnteringPassiveMode {
-                            port_high,
-                            port_low,
-                        }
-                        .to_string()
-                        .as_bytes(),
-                    )
-                    .await
-                    .into_diagnostic()?;
-
-                writer.flush().await.into_diagnostic()?;
-
-                trace!("Waiting for data connection");
-
-                let (data_socket, _) = data_listener
-                    .accept()
-                    .await
-                    .expect("Error accepting connection to data_socket");
-
-                trace!(
-                    "Data connection accepted from {}",
-                    data_socket.peer_addr().unwrap()
-                );
-                let data_connection = Arc::new(Mutex::new(DataConnection::from(data_socket)));
-                self.data_connection = Some(data_connection);
-
-                trace!("Data connection established");
-
-                Ok(None)
-            }
-            "TYPE" => Ok(Some(StatusCode::CmdNotImplemented)),
-            "LPRT" => Ok(Some(StatusCode::CmdNotImplemented)),
-            "PORT" => {
-                // read port from args
-                let address = args.first().unwrap();
-                let address = address
-                    .split(',')
-                    .map(|e| e.parse::<u8>().unwrap())
-                    .collect::<Vec<u8>>();
-                let port = (address[4] as u16) << 8 | address[5] as u16;
-                let ip = [address[0], address[1], address[2], address[3]];
-                let data_addr = SocketAddr::from((ip, port));
-
-                let data_socket = TcpStream::connect(data_addr)
-                    .await
-                    .expect("Could not connect to data socket");
-
-                let data_connection = Arc::new(Mutex::new(DataConnection::from(data_socket)));
-                self.data_connection = Some(data_connection);
-
-                Ok(Some(StatusCode::Ok))
-            }
-            "STOR" => {
-                let destination = args.first().unwrap();
-
-                writer
-                    .write(StatusCode::DataOpenTransfer.to_string().as_bytes())
-                    .await
-                    .into_diagnostic()?;
-
-                let data_connection = self.data_connection.as_ref().unwrap();
-                let mut data_connection = data_connection.lock().await;
-                let data = data_connection.receive().await?;
-                trace!("Received data: {:?}", str::from_utf8(&data).unwrap());
-
-                let mut file = File::create(destination).await.into_diagnostic()?;
-                file.write(&data).await.into_diagnostic()?;
-
-                Ok(Some(StatusCode::Ok))
-            }
-            "RETR" => {
-                let source = args.first().unwrap();
-
-                writer
-                    .write(StatusCode::DataOpenTransfer.to_string().as_bytes())
-                    .await
-                    .into_diagnostic()?;
-
-                let mut file = File::open(source).await.into_diagnostic()?;
-                let mut buf = String::new();
-                file.read_to_string(&mut buf).await.into_diagnostic()?;
-                buf = buf.replace('\n', "\r\n");
-
-                trace!("Read data: {:?}", buf);
-
-                let data_connection = self.data_connection.as_ref().unwrap();
-                let mut data_connection = data_connection.lock().await;
-                trace!("Sending data");
-                data_connection.send(&buf.into_bytes()).await?;
-                trace!("Data sent");
-
-                Ok(Some(StatusCode::PathCreated))
-            }
-            "QUIT" => {
-                writer
-                    .write(StatusCode::ServiceClosingControlConn.to_string().as_bytes())
-                    .await
-                    .into_diagnostic()?;
-
-                writer.flush().await.into_diagnostic()?;
-                writer.shutdown().await.into_diagnostic()?;
-
-                Ok(Some(StatusCode::Ok))
-            }
-            _ => Ok(Some(StatusCode::CmdNotImplemented)),
+        if let Ok(code) = Command::try_from((cmd, args)) {
+            code.run(self, writer).await
+        } else {
+            Ok(Some(StatusCode::CmdNotImplemented))
         }
     }
 }
