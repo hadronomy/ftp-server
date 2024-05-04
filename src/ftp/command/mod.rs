@@ -9,6 +9,7 @@ use self::pasv::Pasv;
 use self::port::Port;
 use self::retr::Retr;
 use self::stor::Stor;
+use self::syst::Syst;
 use self::user::User;
 
 mod pass;
@@ -16,6 +17,7 @@ mod pasv;
 mod port;
 mod retr;
 mod stor;
+mod syst;
 mod user;
 
 pub trait FTPCommand<'a>
@@ -45,6 +47,7 @@ pub enum Command<'a> {
     Stor(Stor<'a>),
     Retr(Retr<'a>),
     Port(Port<'a>),
+    Syst(Syst),
 }
 
 impl<'a> Command<'a> {
@@ -60,6 +63,7 @@ impl<'a> Command<'a> {
             Command::Stor(cmd) => cmd.run(connection, writer).await,
             Command::Retr(cmd) => cmd.run(connection, writer).await,
             Command::Port(cmd) => cmd.run(connection, writer).await,
+            Command::Syst(cmd) => cmd.run(connection, writer).await,
         }
     }
 }
@@ -75,6 +79,7 @@ impl<'a> TryFrom<(&'a str, Vec<&'a str>)> for Command<'a> {
             Stor::KEYWORD => Ok(Command::Stor(Stor::try_from((command, args))?)),
             Retr::KEYWORD => Ok(Command::Retr(Retr::try_from((command, args))?)),
             Port::KEYWORD => Ok(Command::Port(Port::try_from((command, args))?)),
+            Syst::KEYWORD => Ok(Command::Syst(Syst::try_from((command, args))?)),
             _ => bail!("Invalid command"),
         }
     }
