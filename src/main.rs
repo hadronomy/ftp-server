@@ -36,6 +36,7 @@ async fn main() -> Result<()> {
 
         if cli.interactive {
             info!("Starting FTP server");
+            warn!("Currently interactive mode is WIP");
 
             let mut terminal = init_terminal()?;
             terminal.hide_cursor().into_diagnostic()?;
