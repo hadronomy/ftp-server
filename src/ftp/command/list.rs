@@ -47,7 +47,7 @@ impl<'a> FTPCommand<'a> for List<'a> {
                     "{}{} {} {} {} {} {}\r\n",
                     file_type, permissions, links, user, group, formated_date, name
                 );
-                trace!("Sending line: {}", line);
+                trace!("Sending line: {}", line.trim());
                 data_connection
                     .write(line.as_bytes())
                     .await
