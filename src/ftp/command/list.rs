@@ -40,7 +40,7 @@ impl<'a> FTPCommand<'a> for List<'a> {
                 let user = metadata.st_uid();
                 let group = metadata.st_gid();
                 let date = metadata.modified().into_diagnostic()?;
-                let formated_date = DateTime::<chrono::Local>::from(date).format("%b %e %H:%M");
+                let formated_date = DateTime::<chrono::Local>::from(date).format("%y %b %e %H:%M");
                 let name = entry.file_name();
                 let name = name.to_string_lossy();
                 let line = format!(
