@@ -217,7 +217,7 @@ impl ToString for StatusCode {
             StatusCode::Ok => format!("{} Ok\n", self.code()),
             StatusCode::SuperfluousCmdNotImplemented => todo!(),
             StatusCode::SystemStatus(status) => {
-                format!("{code} {status} \n{code} END\n", code = self.code())
+                format!("{code}{status} \n{code} END\n", code = self.code())
             }
             StatusCode::DirectoryStatus => todo!(),
             StatusCode::FileStatus => todo!(),

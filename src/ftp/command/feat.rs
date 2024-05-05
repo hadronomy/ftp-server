@@ -17,7 +17,14 @@ impl<'a> FTPCommand<'a> for Feat {
         _writer: &mut tokio::net::tcp::WriteHalf<'b>,
     ) -> Result<Option<StatusCode>> {
         trace!("Reporting supported features");
-        Ok(Some(StatusCode::CmdNotImplemented))
+        Ok(Some(StatusCode::SystemStatus(
+            "-Features:
+ MLST type*;size*;modify*
+ MLSD
+ UTF8\
+"
+            .to_string(),
+        )))
     }
 }
 
