@@ -21,7 +21,7 @@ use miette::*;
 use tokio::{
     io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader},
     net::{tcp::WriteHalf, TcpListener, TcpStream},
-    sync::{broadcast, Mutex},
+    sync::Mutex,
 };
 use tracing::*;
 
