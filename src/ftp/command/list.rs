@@ -34,7 +34,7 @@ impl<'a> FTPCommand<'a> for List<'a> {
             {
                 let entry = entry.into_diagnostic()?;
                 let metadata = entry.metadata().into_diagnostic()?;
-                let file_type = if metadata.is_dir() { "d" } else { "f" };
+                let file_type = if metadata.is_dir() { "d" } else { "-" };
                 let permissions = permissions_to_string(metadata.permissions().mode());
                 let links = metadata.st_nlink();
                 let user = metadata.st_uid();
