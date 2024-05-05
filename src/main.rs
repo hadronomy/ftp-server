@@ -49,7 +49,7 @@ async fn main() -> Result<()> {
             restore_terminal()?;
         } else {
             let addr = SocketAddr::from(([127, 0, 0, 1], cli.port));
-            let mut server = FTPServer::from(addr);
+            let mut server = FTPServer::from((addr, cli.data_port));
             server.listen().await?;
         }
     }

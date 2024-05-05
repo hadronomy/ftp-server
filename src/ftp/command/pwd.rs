@@ -5,27 +5,29 @@ use tokio::{net::tcp::WriteHalf, sync::Mutex};
 
 use super::{FTPCommand, InnerConnection, StatusCode};
 
-pub struct User<'a>(&'a str);
+pub struct Pwd;
 
-impl<'a> FTPCommand<'a> for User<'a> {
-    const KEYWORD: &'static str = "USER";
+impl<'a> FTPCommand<'a> for Pwd {
+    const KEYWORD: &'static str = "PWD";
 
     async fn run<'b>(
         &self,
         _connection: Arc<Mutex<InnerConnection>>,
         _writer: &mut WriteHalf<'b>,
     ) -> Result<Option<StatusCode>> {
-        Ok(Some(StatusCode::UserLoggedIn))
+        let cwd = std::env::current_dir().into_diagnostic()?;
+        let cwd = cwd.to_string_lossy();
+        Ok(Some(StatusCode::PathCreated(format!("{}", cwd))))
     }
 }
 
-impl<'a> TryFrom<(&'a str, Vec<&'a str>)> for User<'a> {
+impl<'a> TryFrom<(&'a str, Vec<&'a str>)> for Pwd {
     type Error = miette::Error;
 
     fn try_from((command, args): (&'a str, Vec<&'a str>)) -> Result<Self> {
         if command == Self::KEYWORD {
-            if args.len() == 1 {
-                Ok(Self(args[0]))
+            if args.is_empty() {
+                Ok(Self)
             } else {
                 Err(miette!("Invalid number of arguments"))
             }

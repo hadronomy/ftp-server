@@ -21,7 +21,7 @@ use miette::*;
 use tokio::{
     io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader},
     net::{tcp::WriteHalf, TcpListener, TcpStream},
-    sync::Mutex,
+    sync::{broadcast, Mutex},
 };
 use tracing::*;
 
@@ -31,6 +31,7 @@ use crate::{parser::cmd_parser, Command};
 #[derive(Debug, Clone)]
 pub struct FTPServer {
     addr: SocketAddr,
+    data_port: u16,
     // client_connections: Arc<Mutex<Vec<Connection>>>,
 }
 
@@ -44,7 +45,7 @@ impl FTPServer {
                 "Acepted new connection from {}",
                 socket.peer_addr().unwrap()
             );
-            let connection = Connection::new(socket);
+            let connection = Connection::from((socket, self.data_port));
             self.add_connection(connection).await?;
         }
     }
@@ -56,7 +57,15 @@ impl FTPServer {
         //     .expect("Could not lock connections");
         info!(
             "New connection from {}",
-            connection.socket.lock().await.peer_addr().unwrap()
+            connection
+                .inner()
+                .lock()
+                .await
+                .socket
+                .lock()
+                .await
+                .peer_addr()
+                .unwrap()
         );
         // connections.push(connection);
         tokio::spawn(async move {
@@ -67,35 +76,49 @@ impl FTPServer {
     }
 }
 
-impl From<SocketAddr> for FTPServer {
-    fn from(addr: SocketAddr) -> Self {
+impl From<(SocketAddr, u16)> for FTPServer {
+    fn from((addr, data_port): (SocketAddr, u16)) -> Self {
         Self {
             addr,
+            data_port,
             // client_connections: Arc::new(Mutex::new(Vec::new())),
         }
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct Connection {
+pub struct InnerConnection {
     pub(crate) socket: Arc<Mutex<TcpStream>>,
     pub(crate) passive_addr: SocketAddr,
     pub(crate) data_connection: Option<Arc<Mutex<DataConnection>>>,
-    // receiver: Arc<Mutex<broadcast::Receiver<String>>>,
+}
+
+pub struct Connection {
+    inner: Arc<Mutex<InnerConnection>>,
 }
 
 impl Connection {
-    pub fn new(socket: TcpStream) -> Self {
+    pub fn new(inner: InnerConnection) -> Self {
         Self {
-            socket: Arc::new(Mutex::new(socket)),
-            passive_addr: SocketAddr::from(([127, 0, 0, 1], 2222)),
-            data_connection: None,
+            inner: Arc::new(Mutex::new(inner)),
         }
     }
 
-    async fn connect(&mut self) -> Result<()> {
-        let _addr = self.socket.lock().await.peer_addr().unwrap();
-        let socket_clone = self.socket.clone();
+    pub fn inner(&self) -> Arc<Mutex<InnerConnection>> {
+        self.inner.clone()
+    }
+
+    pub async fn connect(&mut self) -> Result<()> {
+        let _addr = self
+            .inner
+            .lock()
+            .await
+            .socket
+            .lock()
+            .await
+            .peer_addr()
+            .unwrap();
+        let socket_clone = self.inner.lock().await.socket.clone();
         let mut socket_mutex = socket_clone.lock().await;
         let socket = socket_mutex.borrow_mut();
         let (mut read_stream, mut write_stream) = socket.split();
@@ -146,9 +169,26 @@ impl Connection {
         writer: &mut WriteHalf<'a>,
     ) -> Result<Option<StatusCode>> {
         if let Ok(code) = Command::try_from((cmd, args)) {
-            code.run(self, writer).await
+            code.run(self.inner.clone(), writer).await
         } else {
             Ok(Some(StatusCode::CmdNotImplemented))
+        }
+    }
+}
+
+impl From<(TcpStream, u16)> for Connection {
+    fn from((socket, data_port): (TcpStream, u16)) -> Self {
+        let inner = InnerConnection::new(socket, data_port);
+        Self::new(inner)
+    }
+}
+
+impl InnerConnection {
+    pub fn new(socket: TcpStream, data_port: u16) -> Self {
+        Self {
+            socket: Arc::new(Mutex::new(socket)),
+            passive_addr: SocketAddr::from(([127, 0, 0, 1], data_port)),
+            data_connection: None,
         }
     }
 }

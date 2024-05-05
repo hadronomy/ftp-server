@@ -1,15 +1,15 @@
 use crate::types::SystemType;
 
 /// Status codes for FTP
-/// 
+///
 /// # Example
 /// ```
 /// use ftp::StatusCode;
-/// 
+///
 /// let status_code = StatusCode::Ok;
 /// assert_eq!(status_code.code(), 200);
 /// ```
-/// 
+///
 #[derive(Debug, Clone)]
 pub enum StatusCode {
     /// **110** - Restart marker reply.
@@ -20,7 +20,7 @@ pub enum StatusCode {
     ///
     /// Where yyyy is User-process data stream marker, and mmmm
     /// server's equivalent marker (note the spaces between markers and "=").
-    RestartMarkerReply,
+    RestartMarker(u64),
 
     /// **120** - Service ready in **nnn** minutes.
     ServiceReadyIn,
@@ -38,7 +38,7 @@ pub enum StatusCode {
     SuperfluousCmdNotImplemented,
 
     /// **211** - System status, or system help reply.
-    SystemStatus,
+    SystemStatus(String),
 
     /// **212** - Directory status.
     DirectoryStatus,
@@ -75,7 +75,7 @@ pub enum StatusCode {
     FileActionOk,
 
     /// **257** - "PATHNAME" created.
-    PathCreated,
+    PathCreated(String),
 
     /// **331** - User name okay, need password.
     UsernameOk,
@@ -139,13 +139,13 @@ impl StatusCode {
     /// Returns the code of this [`StatusCode`].
     pub fn code(&self) -> u16 {
         match self {
-            StatusCode::RestartMarkerReply => 110,
+            StatusCode::RestartMarker(_) => 110,
             StatusCode::ServiceReadyIn => 120,
             StatusCode::DataOpenTransfer => 125,
             StatusCode::FileStatusOk => 150,
             StatusCode::Ok => 200,
             StatusCode::SuperfluousCmdNotImplemented => 202,
-            StatusCode::SystemStatus => 211,
+            StatusCode::SystemStatus(_) => 211,
             StatusCode::DirectoryStatus => 212,
             StatusCode::FileStatus => 213,
             StatusCode::HelpMsg { message: _ } => 214,
@@ -160,7 +160,7 @@ impl StatusCode {
             } => 227,
             StatusCode::UserLoggedIn => 230,
             StatusCode::FileActionOk => 250,
-            StatusCode::PathCreated => 257,
+            StatusCode::PathCreated(_) => 257,
             StatusCode::UsernameOk => 331,
             StatusCode::NeedLoginAccount => 332,
             StatusCode::FileActionPending => 350,
@@ -207,7 +207,7 @@ impl StatusCode {
 impl ToString for StatusCode {
     fn to_string(&self) -> String {
         match self {
-            StatusCode::RestartMarkerReply => format!("{} Restart marker reply\n", self.code()),
+            StatusCode::RestartMarker(_) => format!("{} Restart marker reply\n", self.code()),
             StatusCode::ServiceReadyIn => todo!(),
             StatusCode::DataOpenTransfer => format!(
                 "{} Data connection already open; transfer starting\n",
@@ -216,7 +216,9 @@ impl ToString for StatusCode {
             StatusCode::FileStatusOk => todo!(),
             StatusCode::Ok => format!("{} Ok\n", self.code()),
             StatusCode::SuperfluousCmdNotImplemented => todo!(),
-            StatusCode::SystemStatus => todo!(),
+            StatusCode::SystemStatus(status) => {
+                format!("{code} {status} \n{code} END\n", code = self.code())
+            }
             StatusCode::DirectoryStatus => todo!(),
             StatusCode::FileStatus => todo!(),
             StatusCode::HelpMsg { message } => format!("{} {}\n", self.code(), message),
@@ -240,12 +242,15 @@ impl ToString for StatusCode {
             StatusCode::FileActionOk => {
                 format!("{} Requested file action okay, completed\n", self.code())
             }
-            StatusCode::PathCreated => {
-                format!("{} \"PATHNAME\" created\n", self.code())
+            StatusCode::PathCreated(pathname) => {
+                format!("{} \"{pathname}\" created\n", self.code())
             }
             StatusCode::UsernameOk => todo!(),
             StatusCode::NeedLoginAccount => format!("{} Need account for login\n", self.code()),
-            StatusCode::FileActionPending => todo!(),
+            StatusCode::FileActionPending => format!(
+                "{} Requested file action pending further information\n",
+                self.code()
+            ),
             StatusCode::Unnavaidable => todo!(),
             StatusCode::CantOpenDataConn => todo!(),
             StatusCode::TransferAborted => todo!(),

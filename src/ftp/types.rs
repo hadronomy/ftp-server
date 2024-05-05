@@ -1,3 +1,6 @@
+use std::fmt::Display;
+
+#[derive(Debug, Clone)]
 pub struct System {
     name: &'static str,
 }
@@ -28,9 +31,9 @@ impl From<SystemType> for System {
     }
 }
 
-impl ToString for System {
-    fn to_string(&self) -> String {
-        self.name.to_string()
+impl Display for System {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name)
     }
 }
 

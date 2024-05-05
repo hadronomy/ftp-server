@@ -1,10 +1,10 @@
-use std::str;
+use std::{str, sync::Arc};
 
 use miette::*;
-use tokio::{fs::File, io::AsyncWriteExt};
+use tokio::{fs::File, io::AsyncWriteExt, sync::Mutex};
 use tracing::*;
 
-use super::{Connection, FTPCommand, StatusCode};
+use super::{FTPCommand, InnerConnection, StatusCode};
 
 pub struct Stor<'a>(&'a str);
 
@@ -13,7 +13,7 @@ impl<'a> FTPCommand<'a> for Stor<'a> {
 
     async fn run<'b>(
         &self,
-        connection: &mut Connection,
+        connection: Arc<Mutex<InnerConnection>>,
         writer: &mut tokio::net::tcp::WriteHalf<'b>,
     ) -> Result<Option<StatusCode>> {
         let destination = self.0;
@@ -22,6 +22,8 @@ impl<'a> FTPCommand<'a> for Stor<'a> {
             .write(StatusCode::DataOpenTransfer.to_string().as_bytes())
             .await
             .into_diagnostic()?;
+        
+        let connection = connection.lock().await;
 
         let data_connection = connection.data_connection.as_ref().unwrap();
         let mut data_connection = data_connection.lock().await;

@@ -15,7 +15,7 @@ impl<'a> FTPCommand<'a> for Port<'a> {
 
     async fn run<'b>(
         &self,
-        connection: &mut Connection,
+        connection: Arc<Mutex<InnerConnection>>,
         _writer: &mut WriteHalf<'b>,
     ) -> Result<Option<StatusCode>> {
         let address = self.0;
@@ -28,12 +28,15 @@ impl<'a> FTPCommand<'a> for Port<'a> {
         let ip = [address[0], address[1], address[2], address[3]];
         let data_addr = SocketAddr::from((ip, port));
 
-        let data_socket = TcpStream::connect(data_addr)
-            .await
-            .expect("Could not connect to data socket");
+        tokio::spawn(async move {
+            let data_socket = TcpStream::connect(data_addr)
+                .await
+                .expect("Could not connect to data socket");
 
-        let data_connection = Arc::new(Mutex::new(DataConnection::from(data_socket)));
-        connection.data_connection = Some(data_connection);
+            let mut connection = connection.lock().await;
+            let data_connection = Arc::new(Mutex::new(DataConnection::from(data_socket)));
+            connection.data_connection = Some(data_connection);
+        });
 
         Ok(Some(StatusCode::Ok))
     }
