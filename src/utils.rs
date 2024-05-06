@@ -1,5 +1,5 @@
 use std::{
-    fs::{DirEntry, Permissions},
+    fs::DirEntry,
     os::unix::fs::PermissionsExt,
 };
 
