@@ -22,11 +22,11 @@ impl<'a> FTPCommand<'a> for Pasv {
         writer: &mut WriteHalf<'b>,
     ) -> Result<Option<StatusCode>> {
         let data_addr = SocketAddr::from(([127, 0, 0, 1], 0));
-        let data_port = data_addr.port();
-        let (port_high, port_low) = data_port.div_rem(&256);
         let data_listener = TcpListener::bind(data_addr)
             .await
             .unwrap_or_else(|_| panic!("Could not bind to address {}", data_addr));
+        let data_port = data_listener.local_addr().unwrap().port();
+        let (port_high, port_low) = data_port.div_rem(&256);
         trace!("Data connection listener bound to {}", data_addr);
 
         writer
