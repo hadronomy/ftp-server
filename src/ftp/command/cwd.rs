@@ -21,7 +21,9 @@ impl<'a> FTPCommand<'a> for Cwd<'a> {
         let new_cwd = Path::new(self.0);
         env::set_current_dir(new_cwd).into_diagnostic()?;
 
-        Ok(Some(StatusCode::FileActionOk))
+        Ok(Some(StatusCode::FileActionOk(
+            "Directory successfully changed".to_string(),
+        )))
     }
 }
 

@@ -19,7 +19,7 @@ impl<'a> FTPCommand<'a> for Feat {
         trace!("Reporting supported features");
         Ok(Some(StatusCode::SystemStatus(
             "-Features:
- MLST type*;size*;modify*
+ MLST
  MLSD
  UTF8\
 "

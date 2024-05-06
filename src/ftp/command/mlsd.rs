@@ -1,7 +1,4 @@
-use std::{
-    os::{linux::fs::MetadataExt, unix::fs::PermissionsExt},
-    sync::Arc,
-};
+use std::sync::Arc;
 
 use chrono::DateTime;
 use miette::*;
@@ -9,14 +6,14 @@ use miette::*;
 use tokio::{io::AsyncWriteExt, net::tcp::WriteHalf, sync::Mutex};
 use tracing::*;
 
-use crate::utils::permissions_to_string;
+use crate::utils::permissions_to_machine_string;
 
 use super::{FTPCommand, InnerConnection, StatusCode};
 
-pub struct List<'a>(Vec<&'a str>);
+pub struct Mlsd<'a>(Vec<&'a str>);
 
-impl<'a> FTPCommand<'a> for List<'a> {
-    const KEYWORD: &'static str = "LIST";
+impl<'a> FTPCommand<'a> for Mlsd<'a> {
+    const KEYWORD: &'static str = "MLSD";
 
     async fn run<'b>(
         &self,
@@ -24,7 +21,11 @@ impl<'a> FTPCommand<'a> for List<'a> {
         writer: &mut WriteHalf<'b>,
     ) -> Result<Option<StatusCode>> {
         writer
-            .write(StatusCode::DataOpenTransfer.to_string().as_bytes())
+            .write(
+                StatusCode::FileStatusOk(" Directory listing has started".to_string())
+                    .to_string()
+                    .as_bytes(),
+            )
             .await
             .into_diagnostic()?;
 
@@ -36,18 +37,19 @@ impl<'a> FTPCommand<'a> for List<'a> {
             {
                 let entry = entry.into_diagnostic()?;
                 let metadata = entry.metadata().into_diagnostic()?;
-                let file_type = if metadata.is_dir() { "d" } else { "-" };
-                let permissions = permissions_to_string(metadata.permissions().mode());
-                let links = metadata.st_nlink();
-                let user = metadata.st_uid();
-                let group = metadata.st_gid();
+                let file_type = if metadata.is_dir() { "dir" } else { "file" };
                 let date = metadata.modified().into_diagnostic()?;
-                let formated_date = DateTime::<chrono::Local>::from(date).format("%e %b %y %H:%M");
+                let formated_date = DateTime::<chrono::Local>::from(date).format("%Y%m%d%H%M%S");
+                let permissions = permissions_to_machine_string(&entry)?;
                 let name = entry.file_name();
                 let name = name.to_string_lossy();
                 let line = format!(
-                    "{}{} {} {} {} {} {}\r\n",
-                    file_type, permissions, links, user, group, formated_date, name
+                    "Type={};Size={};Modify={};Perm={} {}\r\n",
+                    file_type,
+                    metadata.len(),
+                    formated_date,
+                    permissions,
+                    name
                 );
                 trace!("Sending line: {}", line.trim());
                 data_connection
@@ -59,22 +61,22 @@ impl<'a> FTPCommand<'a> for List<'a> {
                 .write("\0".as_bytes())
                 .await
                 .into_diagnostic()?;
+
             data_connection.flush().await.into_diagnostic()?;
             data_connection.shutdown().await.into_diagnostic()?;
+        } else {
+            return Ok(Some(StatusCode::CantOpenDataConnection));
         }
 
+        trace!("Closing data connection");
         Ok(Some(StatusCode::ClosingDataConnection))
     }
 }
 
-impl<'a> TryFrom<(&'a str, Vec<&'a str>)> for List<'a> {
+impl<'a> TryFrom<(&'a str, Vec<&'a str>)> for Mlsd<'a> {
     type Error = miette::Error;
 
-    fn try_from((command, args): (&'a str, Vec<&'a str>)) -> Result<Self> {
-        if command == Self::KEYWORD {
-            Ok(Self(args))
-        } else {
-            Err(miette!("Invalid command"))
-        }
+    fn try_from((_command, args): (&'a str, Vec<&'a str>)) -> Result<Self> {
+        Ok(Self(args))
     }
 }

@@ -1,4 +1,4 @@
-use std::{borrow::BorrowMut, sync::Arc};
+use std::{borrow::BorrowMut, net::SocketAddr, sync::Arc};
 
 use miette::*;
 use num_integer::Integer;
@@ -21,8 +21,7 @@ impl<'a> FTPCommand<'a> for Pasv {
         connection: Arc<Mutex<InnerConnection>>,
         writer: &mut WriteHalf<'b>,
     ) -> Result<Option<StatusCode>> {
-        let connection_mutex = connection.lock().await;
-        let data_addr = connection_mutex.passive_addr;
+        let data_addr = SocketAddr::from(([127, 0, 0, 1], 0));
         let data_port = data_addr.port();
         let (port_high, port_low) = data_port.div_rem(&256);
         let data_listener = TcpListener::bind(data_addr)

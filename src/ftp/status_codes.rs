@@ -29,7 +29,7 @@ pub enum StatusCode {
     DataOpenTransfer,
 
     /// **150** - File status okay; about to open data connection.
-    FileStatusOk,
+    FileStatusOk(String),
 
     /// **200** - Ok
     Ok,
@@ -63,7 +63,7 @@ pub enum StatusCode {
     DataOpenNoTransfer,
 
     /// **226** - Closing data connection.
-    ClosingDataConn,
+    ClosingDataConnection,
 
     /// **227** - Entering Passive Mode (h1,h2,h3,h4,p1,p2).
     EnteringPassiveMode { port_high: u16, port_low: u16 },
@@ -72,7 +72,7 @@ pub enum StatusCode {
     UserLoggedIn,
 
     /// **250** - Requested file action okay, completed.
-    FileActionOk,
+    FileActionOk(String),
 
     /// **257** - "PATHNAME" created.
     PathCreated(String),
@@ -90,7 +90,7 @@ pub enum StatusCode {
     Unnavaidable,
 
     /// **425** - Can't open data connection.
-    CantOpenDataConn,
+    CantOpenDataConnection,
 
     /// **426** - Connection closed; transfer aborted.
     TransferAborted,
@@ -142,7 +142,7 @@ impl StatusCode {
             StatusCode::RestartMarker(_) => 110,
             StatusCode::ServiceReadyIn => 120,
             StatusCode::DataOpenTransfer => 125,
-            StatusCode::FileStatusOk => 150,
+            StatusCode::FileStatusOk(_) => 150,
             StatusCode::Ok => 200,
             StatusCode::SuperfluousCmdNotImplemented => 202,
             StatusCode::SystemStatus(_) => 211,
@@ -153,19 +153,19 @@ impl StatusCode {
             StatusCode::ServiceReadyUser => 220,
             StatusCode::ServiceClosingControlConn => 221,
             StatusCode::DataOpenNoTransfer => 225,
-            StatusCode::ClosingDataConn => 226,
+            StatusCode::ClosingDataConnection => 226,
             StatusCode::EnteringPassiveMode {
                 port_high: _,
                 port_low: _,
             } => 227,
             StatusCode::UserLoggedIn => 230,
-            StatusCode::FileActionOk => 250,
+            StatusCode::FileActionOk(_) => 250,
             StatusCode::PathCreated(_) => 257,
             StatusCode::UsernameOk => 331,
             StatusCode::NeedLoginAccount => 332,
             StatusCode::FileActionPending => 350,
             StatusCode::Unnavaidable => 421,
-            StatusCode::CantOpenDataConn => 425,
+            StatusCode::CantOpenDataConnection => 425,
             StatusCode::TransferAborted => 426,
             StatusCode::FileActionNotTaken => 450,
             StatusCode::ActionAbortedLocal => 451,
@@ -213,7 +213,7 @@ impl ToString for StatusCode {
                 "{} Data connection already open; transfer starting\n",
                 self.code()
             ),
-            StatusCode::FileStatusOk => todo!(),
+            StatusCode::FileStatusOk(msg) => format!("{}{msg}\n", self.code()),
             StatusCode::Ok => format!("{} Ok\n", self.code()),
             StatusCode::SuperfluousCmdNotImplemented => todo!(),
             StatusCode::SystemStatus(status) => {
@@ -230,7 +230,9 @@ impl ToString for StatusCode {
                 format!("{} Service closing control connection\n", self.code())
             }
             StatusCode::DataOpenNoTransfer => format!("{} Data connection open\n", self.code()),
-            StatusCode::ClosingDataConn => format!("{} Closing data connection\n", self.code()),
+            StatusCode::ClosingDataConnection => {
+                format!("{} Closing data connection\n", self.code())
+            }
             StatusCode::EnteringPassiveMode {
                 port_high,
                 port_low,
@@ -239,8 +241,8 @@ impl ToString for StatusCode {
                 self.code()
             ),
             StatusCode::UserLoggedIn => "230 User logged in, proceed\n".to_string(),
-            StatusCode::FileActionOk => {
-                format!("{} Requested file action okay, completed\n", self.code())
+            StatusCode::FileActionOk(msg) => {
+                format!("{}{msg}\n", self.code())
             }
             StatusCode::PathCreated(pathname) => {
                 format!("{} \"{pathname}\" created\n", self.code())
@@ -252,7 +254,7 @@ impl ToString for StatusCode {
                 self.code()
             ),
             StatusCode::Unnavaidable => todo!(),
-            StatusCode::CantOpenDataConn => todo!(),
+            StatusCode::CantOpenDataConnection => todo!(),
             StatusCode::TransferAborted => todo!(),
             StatusCode::FileActionNotTaken => todo!(),
             StatusCode::ActionAbortedLocal => todo!(),

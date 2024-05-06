@@ -31,7 +31,6 @@ use crate::{parser::cmd_parser, Command};
 #[derive(Debug, Clone)]
 pub struct FTPServer {
     addr: SocketAddr,
-    data_port: u16,
     // client_connections: Arc<Mutex<Vec<Connection>>>,
 }
 
@@ -45,7 +44,7 @@ impl FTPServer {
                 "Acepted new connection from {}",
                 socket.peer_addr().unwrap()
             );
-            let connection = Connection::from((socket, self.data_port));
+            let connection = Connection::from(socket);
             self.add_connection(connection).await?;
         }
     }
@@ -76,20 +75,16 @@ impl FTPServer {
     }
 }
 
-impl From<(SocketAddr, u16)> for FTPServer {
-    fn from((addr, data_port): (SocketAddr, u16)) -> Self {
-        Self {
-            addr,
-            data_port,
-            // client_connections: Arc::new(Mutex::new(Vec::new())),
-        }
+impl From<SocketAddr> for FTPServer {
+    fn from(addr: SocketAddr) -> Self {
+        Self { addr }
     }
 }
 
 #[derive(Debug, Clone)]
+// client_connections: Arc::new(Mutex::new(Vec::new())),
 pub struct InnerConnection {
     pub(crate) socket: Arc<Mutex<TcpStream>>,
-    pub(crate) passive_addr: SocketAddr,
     pub(crate) data_connection: Option<Arc<Mutex<DataConnection>>>,
 }
 
@@ -176,18 +171,17 @@ impl Connection {
     }
 }
 
-impl From<(TcpStream, u16)> for Connection {
-    fn from((socket, data_port): (TcpStream, u16)) -> Self {
-        let inner = InnerConnection::new(socket, data_port);
+impl From<TcpStream> for Connection {
+    fn from(socket: TcpStream) -> Self {
+        let inner = InnerConnection::new(socket);
         Self::new(inner)
     }
 }
 
 impl InnerConnection {
-    pub fn new(socket: TcpStream, data_port: u16) -> Self {
+    pub fn new(socket: TcpStream) -> Self {
         Self {
             socket: Arc::new(Mutex::new(socket)),
-            passive_addr: SocketAddr::from(([127, 0, 0, 1], data_port)),
             data_connection: None,
         }
     }
