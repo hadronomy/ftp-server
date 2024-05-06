@@ -22,7 +22,7 @@ impl<'a> FTPCommand<'a> for Cwd<'a> {
         env::set_current_dir(new_cwd).into_diagnostic()?;
 
         Ok(Some(StatusCode::FileActionOk(
-            "Directory successfully changed".to_string(),
+            " Directory successfully changed".to_string(),
         )))
     }
 }
