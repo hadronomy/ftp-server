@@ -25,9 +25,10 @@ impl<'a> FTPCommand<'a> for Pasv {
         let data_listener = TcpListener::bind(data_addr)
             .await
             .unwrap_or_else(|_| panic!("Could not bind to address {}", data_addr));
-        let data_port = data_listener.local_addr().unwrap().port();
+        let local_addr = data_listener.local_addr().unwrap();
+        let data_port = local_addr.port();
         let (port_high, port_low) = data_port.div_rem(&256);
-        trace!("Data connection listener bound to {}", data_addr);
+        trace!("Data connection listener bound to {}", local_addr);
 
         writer
             .write(
@@ -44,9 +45,11 @@ impl<'a> FTPCommand<'a> for Pasv {
         writer.flush().await.into_diagnostic()?;
 
         trace!("Waiting for data connection");
-        
-        let connection_mutex = connection.clone();
+
+        connection.lock().await.data_connection = None;
+        let connection = connection.clone();
         tokio::spawn(async move {
+            let connection_mutex = connection.lock();
             let (data_socket, _) = data_listener
                 .accept()
                 .await
@@ -57,7 +60,7 @@ impl<'a> FTPCommand<'a> for Pasv {
                 data_socket.peer_addr().unwrap()
             );
             let data_connection = Arc::new(Mutex::new(DataConnection::from(data_socket)));
-            connection_mutex.lock().await.borrow_mut().data_connection = Some(data_connection);
+            connection_mutex.await.borrow_mut().data_connection = Some(data_connection);
             trace!("Data connection established");
         });
 

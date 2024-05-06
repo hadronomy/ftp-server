@@ -28,12 +28,18 @@ impl<'a> FTPCommand<'a> for List<'a> {
             .await
             .into_diagnostic()?;
 
+        while connection.lock().await.data_connection.as_ref().is_none() {
+            trace!("Waiting for data connection");
+            tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+        }
+
         let connection = connection.lock().await;
         if let Some(data_connection) = connection.data_connection.as_ref() {
             let mut data_connection = data_connection.lock().await;
             for entry in
                 std::fs::read_dir(std::env::current_dir().into_diagnostic()?).into_diagnostic()?
             {
+                trace!("Reading entry {:?}", entry);
                 let entry = entry.into_diagnostic()?;
                 let metadata = entry.metadata().into_diagnostic()?;
                 let file_type = if metadata.is_dir() { "d" } else { "-" };
