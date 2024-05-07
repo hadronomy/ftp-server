@@ -23,6 +23,7 @@ ratatui = "0.26.1"
 termimad = "0.29.1"
 thiserror = "1.0.48"
 tokio = { version = "1.32.0", features = ["full"] }
+tokio-util = { version = "0.7.11", features = ["rt"] }
 tracing = "0.1.37"
 tracing-appender = "0.2.3"
 tracing-subscriber = { version = "0.3.17", features = ["fmt", "std", "ansi"] }

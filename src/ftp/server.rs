@@ -21,8 +21,10 @@ use miette::*;
 use tokio::{
     io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader},
     net::{tcp::WriteHalf, TcpListener, TcpStream},
+    signal,
     sync::Mutex,
 };
+use tokio_util::{sync::CancellationToken, task::TaskTracker};
 use tracing::*;
 
 use crate::StatusCode;
@@ -31,29 +33,48 @@ use crate::{parser::cmd_parser, Command};
 #[derive(Debug, Clone)]
 pub struct FTPServer {
     addr: SocketAddr,
-    // client_connections: Arc<Mutex<Vec<Connection>>>,
+    tracker: TaskTracker,
+    cancelation_token: CancellationToken,
 }
 
 impl FTPServer {
     pub async fn listen(&mut self) -> Result<()> {
+        let cancelation_token = self.cancelation_token.clone();
+        self.tracker.spawn(async move {
+            tokio::select! {
+                _ = signal::ctrl_c() => {
+                    info!("Received SIGINT, shutting down server");
+                    cancelation_token.cancel();
+                }
+            }
+        });
+        self.tracker.close();
+
         let listener = TcpListener::bind(self.addr).await.into_diagnostic()?;
         info!("Listening on {}", self.addr);
+        self.listen_for_connections(listener).await
+    }
+
+    async fn listen_for_connections(&mut self, listener: TcpListener) -> Result<()> {
+        let cancelation_token = self.cancelation_token.clone();
         loop {
-            let (socket, _) = listener.accept().await.into_diagnostic()?;
-            trace!(
-                "Acepted new connection from {}",
-                socket.peer_addr().unwrap()
-            );
+            let (socket, _) = tokio::select! {
+                res = listener.accept() => {
+                    res.into_diagnostic()?
+                }
+                _ = cancelation_token.cancelled() => {
+                    break;
+                }
+            };
             let connection = Connection::try_from(socket)?;
             self.add_connection(connection).await?;
         }
+        info!("Waiting for all connections to close");
+        self.tracker.wait().await;
+        Ok(())
     }
 
     async fn add_connection(&mut self, mut connection: Connection) -> Result<()> {
-        // let mut connections = self
-        //     .client_connections
-        //     .lock()
-        //     .expect("Could not lock connections");
         info!(
             "New connection from {}",
             connection
@@ -66,20 +87,33 @@ impl FTPServer {
                 .peer_addr()
                 .unwrap()
         );
-        // connections.push(connection);
-        tokio::spawn(async move {
+
+        let cancelation_token = self.cancelation_token.clone();
+        self.tracker.spawn(async move {
             trace!("Spawning new control connection task");
-            if let Err(error) = connection.connect().await {
-                error!("Terminated connection with: {:?}", error);
+            tokio::select! {
+                res = connection.connect() => {
+                    if let Err(error) = res {
+                        error!("Terminated connection with: {:?}", error);
+                    }
+                }
+                _ = cancelation_token.cancelled() => {
+                    info!("Connection task canceled");
+                }
             }
         });
+
         Ok(())
     }
 }
 
 impl From<SocketAddr> for FTPServer {
     fn from(addr: SocketAddr) -> Self {
-        Self { addr }
+        Self {
+            addr,
+            tracker: TaskTracker::new(),
+            cancelation_token: CancellationToken::new(),
+        }
     }
 }
 
