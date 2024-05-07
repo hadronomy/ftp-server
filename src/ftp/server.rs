@@ -101,6 +101,18 @@ impl FTPServer {
                     info!("Connection task canceled");
                 }
             }
+            info!(
+                "Closed connection from {:?}",
+                connection
+                    .inner()
+                    .lock()
+                    .await
+                    .socket
+                    .lock()
+                    .await
+                    .peer_addr()
+                    .unwrap()
+            );
         });
 
         Ok(())
