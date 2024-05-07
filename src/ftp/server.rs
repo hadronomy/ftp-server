@@ -19,7 +19,7 @@ use std::{borrow::BorrowMut, net::SocketAddr, str, sync::Arc};
 use miette::*;
 
 use tokio::{
-    io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader},
+    io::{AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, BufReader},
     net::{tcp::WriteHalf, TcpListener, TcpStream},
     sync::Mutex,
 };
@@ -88,8 +88,18 @@ pub struct InnerConnection {
     pub(crate) data_connection: Option<Arc<Mutex<DataConnection>>>,
 }
 
+impl InnerConnection {
+    pub fn new(socket: TcpStream) -> Self {
+        Self {
+            socket: Arc::new(Mutex::new(socket)),
+            data_connection: None,
+        }
+    }
+}
+
 pub type InnerConnectionRef = Arc<Mutex<InnerConnection>>;
 
+#[derive(Debug, Clone)]
 pub struct Connection {
     inner: InnerConnectionRef,
 }
@@ -105,6 +115,7 @@ impl Connection {
         self.inner.clone()
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn connect(&mut self) -> Result<()> {
         let _addr = self
             .inner
@@ -180,15 +191,6 @@ impl From<TcpStream> for Connection {
     }
 }
 
-impl InnerConnection {
-    pub fn new(socket: TcpStream) -> Self {
-        Self {
-            socket: Arc::new(Mutex::new(socket)),
-            data_connection: None,
-        }
-    }
-}
-
 #[derive(Debug)]
 pub struct DataConnection {
     socket: TcpStream,
@@ -205,6 +207,7 @@ impl DataConnection {
     /// # Returns
     ///
     /// Returns a `Result` indicating success or failure.
+    #[deprecated]
     pub async fn send(&mut self, data: &[u8]) -> Result<()> {
         self.write_all(data).await.into_diagnostic()?;
         self.shutdown().await.into_diagnostic()?;
@@ -216,10 +219,11 @@ impl DataConnection {
     /// # Returns
     ///
     /// Returns a `Result` containing the received data as a vector of bytes.
+    #[deprecated]
     pub async fn receive(&mut self) -> Result<Vec<u8>> {
         let mut reader = BufReader::new(self);
         let mut buf = Vec::new();
-        reader.read_until(b'\0', &mut buf).await.into_diagnostic()?;
+        reader.read_to_end(&mut buf).await.into_diagnostic()?;
         Ok(buf)
     }
 }

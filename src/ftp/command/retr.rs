@@ -1,4 +1,5 @@
 use miette::*;
+use ratatui::buffer;
 use tokio::{
     fs::File,
     io::{AsyncReadExt, AsyncWriteExt},
@@ -26,17 +27,26 @@ impl<'a> FTPCommand<'a> for Retr<'a> {
             .into_diagnostic()?;
 
         let mut file = File::open(source).await.into_diagnostic()?;
-        let mut buf = String::new();
-        file.read_to_string(&mut buf).await.into_diagnostic()?;
-        buf = buf.replace('\n', "\r\n");
 
-        trace!("Read data: {:?}", buf);
         let connection = connection.lock().await;
         let data_connection = connection.data_connection.as_ref().unwrap();
         let mut data_connection = data_connection.lock().await;
-        trace!("Sending data");
-        data_connection.send(&buf.into_bytes()).await?;
-        trace!("Data sent");
+
+        let mut buffer = vec![0; 4096];
+        loop {
+            let bytes_read = file.read(&mut buffer).await.into_diagnostic()?;
+            if bytes_read == 0 {
+                break;
+            }
+            data_connection
+                .write_all(&buffer[..bytes_read])
+                .await
+                .into_diagnostic()?;
+        }
+        data_connection.flush().await.into_diagnostic()?;
+        data_connection.shutdown().await.into_diagnostic()?;
+
+        debug!("Data sent");
 
         Ok(Some(StatusCode::Ok))
     }
