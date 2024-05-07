@@ -1,5 +1,5 @@
 use miette::*;
-use ratatui::buffer;
+
 use tokio::{
     fs::File,
     io::{AsyncReadExt, AsyncWriteExt},

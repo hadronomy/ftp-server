@@ -19,7 +19,7 @@ use std::{borrow::BorrowMut, net::SocketAddr, str, sync::Arc};
 use miette::*;
 
 use tokio::{
-    io::{AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, BufReader},
+    io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader},
     net::{tcp::WriteHalf, TcpListener, TcpStream},
     sync::Mutex,
 };
@@ -194,38 +194,6 @@ impl From<TcpStream> for Connection {
 #[derive(Debug)]
 pub struct DataConnection {
     socket: TcpStream,
-}
-
-/// Represents a data connection for sending and receiving data.
-impl DataConnection {
-    /// Sends the provided data over the data connection.
-    ///
-    /// # Arguments
-    ///
-    /// * `data` - The data to be sent as a slice of bytes.
-    ///
-    /// # Returns
-    ///
-    /// Returns a `Result` indicating success or failure.
-    #[deprecated]
-    pub async fn send(&mut self, data: &[u8]) -> Result<()> {
-        self.write_all(data).await.into_diagnostic()?;
-        self.shutdown().await.into_diagnostic()?;
-        Ok(())
-    }
-
-    /// Receives data from the data connection.
-    ///
-    /// # Returns
-    ///
-    /// Returns a `Result` containing the received data as a vector of bytes.
-    #[deprecated]
-    pub async fn receive(&mut self) -> Result<Vec<u8>> {
-        let mut reader = BufReader::new(self);
-        let mut buf = Vec::new();
-        reader.read_to_end(&mut buf).await.into_diagnostic()?;
-        Ok(buf)
-    }
 }
 
 impl AsyncWrite for DataConnection {
