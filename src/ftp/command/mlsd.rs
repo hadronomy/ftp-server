@@ -1,14 +1,12 @@
-use std::sync::Arc;
-
 use chrono::DateTime;
 use miette::*;
 
-use tokio::{io::AsyncWriteExt, net::tcp::WriteHalf, sync::Mutex};
+use tokio::{io::AsyncWriteExt, net::tcp::WriteHalf};
 use tracing::*;
 
 use crate::utils::permissions_to_machine_string;
 
-use super::{FTPCommand, InnerConnection, StatusCode};
+use crate::{FTPCommand, InnerConnectionRef, StatusCode};
 
 pub struct Mlsd<'a>(Vec<&'a str>);
 
@@ -17,7 +15,7 @@ impl<'a> FTPCommand<'a> for Mlsd<'a> {
 
     async fn run<'b>(
         &self,
-        connection: Arc<Mutex<InnerConnection>>,
+        connection: InnerConnectionRef,
         writer: &mut WriteHalf<'b>,
     ) -> Result<Option<StatusCode>> {
         writer

@@ -1,12 +1,11 @@
-use std::sync::Arc;
+
 
 use miette::*;
-use tokio::sync::Mutex;
+
 use tracing::*;
 
 use crate::types::{System, SystemType};
-
-use super::{FTPCommand, InnerConnection, StatusCode};
+use crate::{FTPCommand, InnerConnectionRef, StatusCode};
 
 pub struct Syst;
 
@@ -16,7 +15,7 @@ impl<'a> FTPCommand<'a> for Syst {
     #[tracing::instrument(skip(self, _connection, _writer))]
     async fn run<'b>(
         &self,
-        _connection: Arc<Mutex<InnerConnection>>,
+        _connection: InnerConnectionRef,
         _writer: &mut tokio::net::tcp::WriteHalf<'b>,
     ) -> Result<Option<StatusCode>> {
         trace!(

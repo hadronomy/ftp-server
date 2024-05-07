@@ -9,7 +9,7 @@ use tokio::{
 };
 use tracing::*;
 
-use crate::{DataConnection, FTPCommand, InnerConnection, StatusCode};
+use crate::{DataConnection, FTPCommand, InnerConnectionRef, StatusCode};
 
 pub struct Pasv;
 
@@ -18,7 +18,7 @@ impl<'a> FTPCommand<'a> for Pasv {
 
     async fn run<'b>(
         &self,
-        connection: Arc<Mutex<InnerConnection>>,
+        connection: InnerConnectionRef,
         writer: &mut WriteHalf<'b>,
     ) -> Result<Option<StatusCode>> {
         let data_addr = SocketAddr::from(([127, 0, 0, 1], 0));

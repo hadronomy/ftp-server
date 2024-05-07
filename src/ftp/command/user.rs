@@ -1,9 +1,7 @@
-use std::sync::Arc;
-
 use miette::*;
-use tokio::{net::tcp::WriteHalf, sync::Mutex};
+use tokio::net::tcp::WriteHalf;
 
-use super::{FTPCommand, InnerConnection, StatusCode};
+use crate::{FTPCommand, InnerConnectionRef, StatusCode};
 
 pub struct User<'a>(&'a str);
 
@@ -12,7 +10,7 @@ impl<'a> FTPCommand<'a> for User<'a> {
 
     async fn run<'b>(
         &self,
-        _connection: Arc<Mutex<InnerConnection>>,
+        _connection: InnerConnectionRef,
         _writer: &mut WriteHalf<'b>,
     ) -> Result<Option<StatusCode>> {
         Ok(Some(StatusCode::UserLoggedIn))

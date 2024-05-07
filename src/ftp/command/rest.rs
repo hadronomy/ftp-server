@@ -1,11 +1,9 @@
-use std::sync::Arc;
-
 use miette::*;
 
-use tokio::{net::tcp::WriteHalf, sync::Mutex};
+use tokio::net::tcp::WriteHalf;
 use tracing::*;
 
-use super::{FTPCommand, InnerConnection, StatusCode};
+use crate::{FTPCommand, InnerConnectionRef, StatusCode};
 
 pub struct Rest(u64);
 
@@ -15,7 +13,7 @@ impl<'a> FTPCommand<'a> for Rest {
     #[tracing::instrument(skip(self, _connection, _writer))]
     async fn run<'b>(
         &self,
-        _connection: Arc<Mutex<InnerConnection>>,
+        _connection: InnerConnectionRef,
         _writer: &mut WriteHalf<'b>,
     ) -> Result<Option<StatusCode>> {
         trace!("Restarting at {}", self.0);

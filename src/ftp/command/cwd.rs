@@ -1,11 +1,11 @@
-use std::{env, path::Path, sync::Arc};
+use std::{env, path::Path};
 
 use miette::*;
 
-use tokio::{net::tcp::WriteHalf, sync::Mutex};
+use tokio::net::tcp::WriteHalf;
 use tracing::*;
 
-use super::{FTPCommand, InnerConnection, StatusCode};
+use crate::{FTPCommand, InnerConnectionRef, StatusCode};
 
 pub struct Cwd<'a>(&'a str);
 
@@ -14,7 +14,7 @@ impl<'a> FTPCommand<'a> for Cwd<'a> {
 
     async fn run<'b>(
         &self,
-        _connection: Arc<Mutex<InnerConnection>>,
+        _connection: InnerConnectionRef,
         _writer: &mut WriteHalf<'b>,
     ) -> Result<Option<StatusCode>> {
         trace!("Changing working directory");

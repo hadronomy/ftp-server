@@ -2,11 +2,12 @@ use std::{net::SocketAddr, sync::Arc};
 
 use miette::*;
 
-use tokio::{net::TcpStream, sync::Mutex};
+use tokio::{
+    net::{tcp::WriteHalf, TcpStream},
+    sync::Mutex,
+};
 
-use crate::DataConnection;
-
-use super::*;
+use crate::{DataConnection, FTPCommand, InnerConnectionRef, StatusCode};
 
 pub struct Port<'a>(&'a str);
 
@@ -15,7 +16,7 @@ impl<'a> FTPCommand<'a> for Port<'a> {
 
     async fn run<'b>(
         &self,
-        connection: Arc<Mutex<InnerConnection>>,
+        connection: InnerConnectionRef,
         _writer: &mut WriteHalf<'b>,
     ) -> Result<Option<StatusCode>> {
         let address = self.0;

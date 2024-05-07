@@ -1,9 +1,9 @@
-use std::sync::Arc;
+
 
 use miette::*;
-use tokio::{net::tcp::WriteHalf, sync::Mutex};
+use tokio::{net::tcp::WriteHalf};
 
-use super::{FTPCommand, InnerConnection, StatusCode};
+use crate::{FTPCommand, InnerConnectionRef, StatusCode};
 
 pub struct Pwd;
 
@@ -12,7 +12,7 @@ impl<'a> FTPCommand<'a> for Pwd {
 
     async fn run<'b>(
         &self,
-        _connection: Arc<Mutex<InnerConnection>>,
+        _connection: InnerConnectionRef,
         _writer: &mut WriteHalf<'b>,
     ) -> Result<Option<StatusCode>> {
         let cwd = std::env::current_dir().into_diagnostic()?;

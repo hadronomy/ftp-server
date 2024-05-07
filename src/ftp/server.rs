@@ -88,8 +88,10 @@ pub struct InnerConnection {
     pub(crate) data_connection: Option<Arc<Mutex<DataConnection>>>,
 }
 
+pub type InnerConnectionRef = Arc<Mutex<InnerConnection>>;
+
 pub struct Connection {
-    inner: Arc<Mutex<InnerConnection>>,
+    inner: InnerConnectionRef,
 }
 
 impl Connection {
@@ -99,7 +101,7 @@ impl Connection {
         }
     }
 
-    pub fn inner(&self) -> Arc<Mutex<InnerConnection>> {
+    pub fn inner(&self) -> InnerConnectionRef {
         self.inner.clone()
     }
 

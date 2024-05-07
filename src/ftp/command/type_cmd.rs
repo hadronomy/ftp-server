@@ -1,10 +1,10 @@
-use std::sync::Arc;
+
 
 use miette::*;
-use tokio::sync::Mutex;
+
 use tracing::*;
 
-use super::{FTPCommand, InnerConnection, StatusCode};
+use crate::{FTPCommand, InnerConnectionRef, StatusCode};
 
 pub struct Type(char);
 
@@ -14,7 +14,7 @@ impl<'a> FTPCommand<'a> for Type {
     #[tracing::instrument(skip(self, _connection, _writer))]
     async fn run<'b>(
         &self,
-        _connection: Arc<Mutex<InnerConnection>>,
+        _connection: InnerConnectionRef,
         _writer: &mut tokio::net::tcp::WriteHalf<'b>,
     ) -> Result<Option<StatusCode>> {
         trace!("Setting transfer type to {}", self.0);

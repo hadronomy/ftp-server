@@ -3,7 +3,7 @@ use miette::*;
 use tokio::net::tcp::WriteHalf;
 use tracing::*;
 
-use super::{Connection, FTPCommand, StatusCode};
+use crate::{DataConnection, FTPCommand, InnerConnectionRef, StatusCode};
 
 pub struct Quit;
 
@@ -12,7 +12,7 @@ impl<'a> FTPCommand<'a> for Quit {
 
     async fn run<'b>(
         &self,
-        connection: &mut Connection,
+        connection: InnerConnectionRef,
         writer: &mut WriteHalf<'b>,
     ) -> Result<Option<StatusCode>> {
         writer

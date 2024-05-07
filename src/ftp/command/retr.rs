@@ -1,14 +1,14 @@
-use std::sync::Arc;
+
 
 use miette::*;
 use tokio::{
     fs::File,
     io::{AsyncReadExt, AsyncWriteExt},
-    net::tcp::WriteHalf, sync::Mutex,
+    net::tcp::WriteHalf,
 };
 use tracing::*;
 
-use super::{FTPCommand, InnerConnection, StatusCode};
+use crate::{FTPCommand, InnerConnectionRef, StatusCode};
 
 pub struct Retr<'a>(&'a str);
 
@@ -17,7 +17,7 @@ impl<'a> FTPCommand<'a> for Retr<'a> {
 
     async fn run<'b>(
         &self,
-        connection: Arc<Mutex<InnerConnection>>,
+        connection: InnerConnectionRef,
         writer: &mut WriteHalf<'b>,
     ) -> Result<Option<StatusCode>> {
         let source = self.0;

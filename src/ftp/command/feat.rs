@@ -1,10 +1,7 @@
-use std::sync::Arc;
-
 use miette::*;
-use tokio::sync::Mutex;
 use tracing::*;
 
-use super::{FTPCommand, InnerConnection, StatusCode};
+use crate::{FTPCommand, InnerConnectionRef, StatusCode};
 
 pub struct Feat;
 
@@ -13,7 +10,7 @@ impl<'a> FTPCommand<'a> for Feat {
 
     async fn run<'b>(
         &self,
-        _connection: Arc<Mutex<InnerConnection>>,
+        _connection: InnerConnectionRef,
         _writer: &mut tokio::net::tcp::WriteHalf<'b>,
     ) -> Result<Option<StatusCode>> {
         trace!("Reporting supported features");
