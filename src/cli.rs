@@ -25,11 +25,6 @@ pub struct Args {
     #[cfg_attr(debug_assertions, arg(short, long, default_value = "2121"))]
     #[cfg_attr(not(debug_assertions), arg(short, long, default_value = "21"))]
     pub port: u16,
-
-    /// The data port to listen on
-    #[cfg_attr(debug_assertions, arg(short, long, default_value = "2222"))]
-    #[cfg_attr(not(debug_assertions), arg(short, long, default_value = "22"))]
-    pub data_port: u16,
 }
 
 /// Implements the `Args` struct and its associated methods.
