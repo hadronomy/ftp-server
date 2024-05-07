@@ -15,13 +15,13 @@ use self::pass::Pass;
 use self::pasv::Pasv;
 use self::port::Port;
 use self::pwd::Pwd;
+use self::quit::Quit;
 use self::rest::Rest;
 use self::retr::Retr;
 use self::stor::Stor;
 use self::syst::Syst;
 use self::type_cmd::Type;
 use self::user::User;
-use self::quit::Quit;
 
 mod cwd;
 mod feat;
@@ -31,13 +31,13 @@ mod pass;
 mod pasv;
 mod port;
 mod pwd;
+mod quit;
 mod rest;
 mod retr;
 mod stor;
 mod syst;
 mod type_cmd;
 mod user;
-mod quit;
 
 pub trait FTPCommand<'a>
 where
@@ -74,6 +74,7 @@ pub enum Command<'a> {
     Type(Type),
     List(List<'a>),
     Mlsd(Mlsd<'a>),
+    Quit(Quit),
 }
 
 impl<'a> Command<'a> {
@@ -97,6 +98,7 @@ impl<'a> Command<'a> {
             Command::Type(cmd) => cmd.run(connection, writer).await,
             Command::List(cmd) => cmd.run(connection, writer).await,
             Command::Mlsd(cmd) => cmd.run(connection, writer).await,
+            Command::Quit(cmd) => cmd.run(connection, writer).await,
         }
     }
 }
@@ -120,6 +122,7 @@ impl<'a> TryFrom<(&'a str, Vec<&'a str>)> for Command<'a> {
             Type::KEYWORD => Ok(Command::Type(Type::try_from((command, args))?)),
             List::KEYWORD => Ok(Command::List(List::try_from((command, args))?)),
             Mlsd::KEYWORD => Ok(Command::Mlsd(Mlsd::try_from((command, args))?)),
+            Quit::KEYWORD => Ok(Command::Quit(Quit::try_from((command, args))?)),
             _ => bail!("Invalid command"),
         }
     }
