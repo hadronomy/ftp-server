@@ -1,4 +1,4 @@
-use std::{env, ffi::OsString, path::Path};
+use std::{ffi::OsString};
 
 use miette::*;
 
