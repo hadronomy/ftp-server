@@ -59,7 +59,6 @@ impl<'a> FTPCommand<'a> for Mlsd<'a> {
                 .await
                 .into_diagnostic()?;
 
-            data_connection.flush().await.into_diagnostic()?;
             data_connection.shutdown().await.into_diagnostic()?;
         } else {
             return Ok(Some(StatusCode::CantOpenDataConnection));

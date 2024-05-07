@@ -62,7 +62,6 @@ impl<'a> FTPCommand<'a> for List<'a> {
                 .write("\0".as_bytes())
                 .await
                 .into_diagnostic()?;
-            data_connection.flush().await.into_diagnostic()?;
             data_connection.shutdown().await.into_diagnostic()?;
         }
 

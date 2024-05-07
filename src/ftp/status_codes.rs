@@ -57,7 +57,7 @@ pub enum StatusCode {
     ServiceReadyUser,
 
     /// **221** - Service closing control connection.
-    ServiceClosingControlConn,
+    ServiceClosingControlConnection,
 
     /// **225** - Data connection open; no transfer in progress.
     DataOpenNoTransfer,
@@ -151,7 +151,7 @@ impl StatusCode {
             StatusCode::HelpMsg { message: _ } => 214,
             StatusCode::SystemType(_) => 215,
             StatusCode::ServiceReadyUser => 220,
-            StatusCode::ServiceClosingControlConn => 221,
+            StatusCode::ServiceClosingControlConnection => 221,
             StatusCode::DataOpenNoTransfer => 225,
             StatusCode::ClosingDataConnection => 226,
             StatusCode::EnteringPassiveMode {
@@ -226,7 +226,7 @@ impl ToString for StatusCode {
                 format!("{} {}\n", self.code(), system_type.to_string())
             }
             StatusCode::ServiceReadyUser => format!("{} Service ready for new user\n", self.code()),
-            StatusCode::ServiceClosingControlConn => {
+            StatusCode::ServiceClosingControlConnection => {
                 format!("{} Service closing control connection\n", self.code())
             }
             StatusCode::DataOpenNoTransfer => format!("{} Data connection open\n", self.code()),
@@ -256,7 +256,9 @@ impl ToString for StatusCode {
             StatusCode::Unnavaidable => todo!(),
             StatusCode::CantOpenDataConnection => todo!(),
             StatusCode::TransferAborted => todo!(),
-            StatusCode::FileActionNotTaken => todo!(),
+            StatusCode::FileActionNotTaken => {
+                format!("{} Requested file action not taken\n", self.code())
+            }
             StatusCode::ActionAbortedLocal => todo!(),
             StatusCode::InsufficientStorage => todo!(),
             StatusCode::SyntaxError => todo!(),

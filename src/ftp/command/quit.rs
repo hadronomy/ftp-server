@@ -1,6 +1,6 @@
 use miette::*;
 
-use tokio::net::tcp::WriteHalf;
+use tokio::{io::AsyncWriteExt, net::tcp::WriteHalf};
 use tracing::*;
 
 use crate::{DataConnection, FTPCommand, InnerConnectionRef, StatusCode};
@@ -12,7 +12,7 @@ impl<'a> FTPCommand<'a> for Quit {
 
     async fn run<'b>(
         &self,
-        connection: InnerConnectionRef,
+        _connection: InnerConnectionRef,
         writer: &mut WriteHalf<'b>,
     ) -> Result<Option<StatusCode>> {
         writer
@@ -23,8 +23,7 @@ impl<'a> FTPCommand<'a> for Quit {
             )
             .await
             .into_diagnostic()?;
-
-        connection.close().await;
+        writer.shutdown().await.into_diagnostic()?;
 
         Ok(None)
     }

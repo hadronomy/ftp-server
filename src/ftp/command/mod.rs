@@ -21,6 +21,7 @@ use self::stor::Stor;
 use self::syst::Syst;
 use self::type_cmd::Type;
 use self::user::User;
+use self::quit::Quit;
 
 mod cwd;
 mod feat;
@@ -36,6 +37,7 @@ mod stor;
 mod syst;
 mod type_cmd;
 mod user;
+mod quit;
 
 pub trait FTPCommand<'a>
 where

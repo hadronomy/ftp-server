@@ -21,13 +21,20 @@ impl<'a> FTPCommand<'a> for Retr<'a> {
     ) -> Result<Option<StatusCode>> {
         let source = self.0;
 
+        let path = connection.lock().await.cwd().join(source);
+        trace!("Opening file {:?}", path);
+        let mut file = match File::open(path).await.into_diagnostic() {
+            Ok(file) => file,
+            Err(_) => {
+                error!("File not found");
+                return Ok(Some(StatusCode::FileActionNotTaken));
+            }
+        };
+
         writer
             .write(StatusCode::DataOpenTransfer.to_string().as_bytes())
             .await
             .into_diagnostic()?;
-
-        let path = connection.lock().await.cwd().join(source);
-        let mut file = File::open(path).await.into_diagnostic()?;
 
         let connection = connection.lock().await;
         let data_connection = connection.data_connection.as_ref().unwrap();
@@ -44,12 +51,11 @@ impl<'a> FTPCommand<'a> for Retr<'a> {
                 .await
                 .into_diagnostic()?;
         }
-        data_connection.flush().await.into_diagnostic()?;
         data_connection.shutdown().await.into_diagnostic()?;
 
         debug!("Data sent");
 
-        Ok(Some(StatusCode::Ok))
+        Ok(Some(StatusCode::ClosingDataConnection))
     }
 }
 

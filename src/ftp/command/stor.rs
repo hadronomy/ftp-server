@@ -42,12 +42,11 @@ impl<'a> FTPCommand<'a> for Stor<'a> {
                 .await
                 .into_diagnostic()?;
         }
-        data_connection.flush().await.into_diagnostic()?;
         data_connection.shutdown().await.into_diagnostic()?;
 
         debug!("Data received");
 
-        Ok(Some(StatusCode::Ok))
+        Ok(Some(StatusCode::CantOpenDataConnection))
     }
 }
 
