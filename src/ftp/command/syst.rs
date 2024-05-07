@@ -10,7 +10,6 @@ pub struct Syst;
 impl<'a> FTPCommand<'a> for Syst {
     const KEYWORD: &'static str = "SYST";
 
-    #[tracing::instrument(skip(self, _connection, _writer))]
     async fn run<'b>(
         &self,
         _connection: InnerConnectionRef,
