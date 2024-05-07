@@ -1,7 +1,5 @@
-
-
 use miette::*;
-use tokio::{net::tcp::WriteHalf};
+use tokio::net::tcp::WriteHalf;
 
 use crate::{FTPCommand, InnerConnectionRef, StatusCode};
 

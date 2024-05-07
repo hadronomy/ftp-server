@@ -1,4 +1,4 @@
-use std::{str};
+use std::str;
 
 use miette::*;
 use tokio::{fs::File, io::AsyncWriteExt};
@@ -22,7 +22,7 @@ impl<'a> FTPCommand<'a> for Stor<'a> {
             .write(StatusCode::DataOpenTransfer.to_string().as_bytes())
             .await
             .into_diagnostic()?;
-        
+
         let connection = connection.lock().await;
 
         let data_connection = connection.data_connection.as_ref().unwrap();

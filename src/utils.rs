@@ -1,7 +1,4 @@
-use std::{
-    fs::DirEntry,
-    os::unix::fs::PermissionsExt,
-};
+use std::{fs::DirEntry, os::unix::fs::PermissionsExt};
 
 use miette::*;
 
