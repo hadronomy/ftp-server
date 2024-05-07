@@ -169,7 +169,7 @@ impl Connection {
         self.inner.clone()
     }
 
-    #[tracing::instrument(skip(self), fields(connection = %self.inner().lock().await.socket.lock().await.peer_addr().unwrap()))]
+    #[tracing::instrument(skip(self), name = "connection", fields(ip = %self.inner().lock().await.socket.lock().await.peer_addr().unwrap()))]
     pub async fn connect(&mut self) -> Result<()> {
         let _addr = self
             .inner
