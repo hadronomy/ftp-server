@@ -10,6 +10,7 @@ use std::net::SocketAddr;
 use miette::*;
 
 use tracing::*;
+use tracing_subscriber::filter::{EnvFilter, LevelFilter};
 use tracing_subscriber::prelude::*;
 
 use crate::app::*;
@@ -29,6 +30,11 @@ async fn main() -> Result<()> {
         } else {
             tracing_subscriber::registry()
                 .with(tracing_subscriber::fmt::layer().with_writer(non_blocking))
+                .with(
+                    EnvFilter::builder()
+                        .with_default_directive(LevelFilter::INFO.into())
+                        .from_env_lossy(),
+                )
                 .init();
         }
 
