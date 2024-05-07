@@ -10,12 +10,15 @@ impl<'a> FTPCommand<'a> for Pwd {
 
     async fn run<'b>(
         &self,
-        _connection: InnerConnectionRef,
+        connection: InnerConnectionRef,
         _writer: &mut WriteHalf<'b>,
     ) -> Result<Option<StatusCode>> {
-        let cwd = std::env::current_dir().into_diagnostic()?;
-        let cwd = cwd.to_string_lossy();
-        Ok(Some(StatusCode::PathCreated(format!("{}", cwd))))
+        let cwd = connection.lock().await.cwd();
+
+        Ok(Some(StatusCode::PathCreated(format!(
+            "{}",
+            cwd.to_string_lossy()
+        ))))
     }
 }
 

@@ -29,7 +29,8 @@ impl<'a> FTPCommand<'a> for Stor<'a> {
         let data_connection = connection.data_connection.as_ref().unwrap();
         let mut data_connection = data_connection.lock().await;
 
-        let mut file = File::create(destination).await.into_diagnostic()?;
+        let path = connection.cwd().join(destination);
+        let mut file = File::create(path).await.into_diagnostic()?;
 
         let mut buffer = vec![0; 4096];
         loop {

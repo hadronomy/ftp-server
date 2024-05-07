@@ -28,11 +28,10 @@ impl<'a> FTPCommand<'a> for Mlsd<'a> {
             .into_diagnostic()?;
 
         let connection = connection.lock().await;
+        let path = connection.cwd();
         if let Some(data_connection) = connection.data_connection.as_ref() {
             let mut data_connection = data_connection.lock().await;
-            for entry in
-                std::fs::read_dir(std::env::current_dir().into_diagnostic()?).into_diagnostic()?
-            {
+            for entry in std::fs::read_dir(path).into_diagnostic()? {
                 let entry = entry.into_diagnostic()?;
                 let metadata = entry.metadata().into_diagnostic()?;
                 let file_type = if metadata.is_dir() { "dir" } else { "file" };

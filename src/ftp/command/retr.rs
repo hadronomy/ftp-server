@@ -26,7 +26,8 @@ impl<'a> FTPCommand<'a> for Retr<'a> {
             .await
             .into_diagnostic()?;
 
-        let mut file = File::open(source).await.into_diagnostic()?;
+        let path = connection.lock().await.cwd().join(source);
+        let mut file = File::open(path).await.into_diagnostic()?;
 
         let connection = connection.lock().await;
         let data_connection = connection.data_connection.as_ref().unwrap();

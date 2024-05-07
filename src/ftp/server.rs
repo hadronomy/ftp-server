@@ -14,7 +14,7 @@
 //! The code also includes various helper functions and enums for handling FTP commands,
 //! status codes, and system types.
 
-use std::{borrow::BorrowMut, net::SocketAddr, str, sync::Arc};
+use std::{borrow::BorrowMut, ffi::OsString, net::SocketAddr, path::PathBuf, str, sync::Arc};
 
 use miette::*;
 
@@ -44,7 +44,7 @@ impl FTPServer {
                 "Acepted new connection from {}",
                 socket.peer_addr().unwrap()
             );
-            let connection = Connection::from(socket);
+            let connection = Connection::try_from(socket)?;
             self.add_connection(connection).await?;
         }
     }
@@ -69,7 +69,9 @@ impl FTPServer {
         // connections.push(connection);
         tokio::spawn(async move {
             trace!("Spawning new control connection task");
-            connection.connect().await.unwrap();
+            if let Err(error) = connection.connect().await {
+                error!("Terminated connection with: {:?}", error);
+            }
         });
         Ok(())
     }
@@ -86,13 +88,31 @@ impl From<SocketAddr> for FTPServer {
 pub struct InnerConnection {
     pub(crate) socket: Arc<Mutex<TcpStream>>,
     pub(crate) data_connection: Option<Arc<Mutex<DataConnection>>>,
+    pub(crate) cwd: PathBuf,
 }
 
 impl InnerConnection {
-    pub fn new(socket: TcpStream) -> Self {
+    pub fn new(socket: TcpStream, cwd: PathBuf) -> Self {
         Self {
             socket: Arc::new(Mutex::new(socket)),
             data_connection: None,
+            cwd,
+        }
+    }
+
+    pub fn cwd(&self) -> PathBuf {
+        self.cwd.clone()
+    }
+
+    pub async fn change_dir(&mut self, dir: OsString) -> Result<()> {
+        let mut cwd = self.cwd.clone();
+        cwd.push(dir);
+        trace!("Changing directory to {:?}", cwd);
+        if cwd.is_dir() {
+            self.cwd = cwd;
+            Ok(())
+        } else {
+            Err(miette!("Invalid directory"))
         }
     }
 }
@@ -115,7 +135,7 @@ impl Connection {
         self.inner.clone()
     }
 
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self), fields(connection = %self.inner().lock().await.socket.lock().await.peer_addr().unwrap()))]
     pub async fn connect(&mut self) -> Result<()> {
         let _addr = self
             .inner
@@ -142,6 +162,12 @@ impl Connection {
             let _ = reader.read_until(b'\n', &mut buf).await.into_diagnostic()?;
             let input = str::from_utf8(&buf).into_diagnostic()?.trim_end();
             debug!("Reading {:?} from stream", input);
+            if input.is_empty() {
+                // This is here because if the client crashes
+                // the server will keep reading empty commands
+                // TODO: Investigate better solutions
+                return Err(miette!("Empty command"));
+            }
 
             let (_, (cmd, args)) = cmd_parser(input).unwrap();
             info!("Received {:?} command with args: {:?}", cmd, args);
@@ -177,17 +203,19 @@ impl Connection {
         writer: &mut WriteHalf<'a>,
     ) -> Result<Option<StatusCode>> {
         if let Ok(code) = Command::try_from((cmd, args)) {
-            code.run(self.inner.clone(), writer).await
-        } else {
-            Ok(Some(StatusCode::CmdNotImplemented))
+            return code.run(self.inner.clone(), writer).await;
         }
+        Ok(Some(StatusCode::CmdNotImplemented))
     }
 }
 
-impl From<TcpStream> for Connection {
-    fn from(socket: TcpStream) -> Self {
-        let inner = InnerConnection::new(socket);
-        Self::new(inner)
+impl TryFrom<TcpStream> for Connection {
+    type Error = miette::Error;
+
+    fn try_from(socket: TcpStream) -> Result<Self> {
+        let cwd = std::env::current_dir().into_diagnostic()?;
+        let inner = InnerConnection::new(socket, cwd);
+        Ok(Self::new(inner))
     }
 }
 

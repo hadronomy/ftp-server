@@ -1,4 +1,4 @@
-use std::{env, path::Path};
+use std::{env, ffi::OsString, path::Path};
 
 use miette::*;
 
@@ -14,12 +14,13 @@ impl<'a> FTPCommand<'a> for Cwd<'a> {
 
     async fn run<'b>(
         &self,
-        _connection: InnerConnectionRef,
+        connection: InnerConnectionRef,
         _writer: &mut WriteHalf<'b>,
     ) -> Result<Option<StatusCode>> {
         trace!("Changing working directory");
-        let new_cwd = Path::new(self.0);
-        env::set_current_dir(new_cwd).into_diagnostic()?;
+        let new_cwd = OsString::from(self.0);
+        trace!("New CWD: {:?}", new_cwd);
+        connection.lock().await.change_dir(new_cwd).await?;
 
         Ok(Some(StatusCode::FileActionOk(
             " Directory successfully changed".to_string(),
