@@ -66,7 +66,7 @@ impl FTPServer {
                     break;
                 }
             };
-            let connection = Connection::try_from(socket)?;
+            let connection = Connection::try_from((socket, self.cancelation_token.clone()))?;
             self.add_connection(connection).await?;
         }
         info!("Waiting for all connections to close");
@@ -88,18 +88,10 @@ impl FTPServer {
                 .unwrap()
         );
 
-        let cancelation_token = self.cancelation_token.clone();
         self.tracker.spawn(async move {
             trace!("Spawning new control connection task");
-            tokio::select! {
-                res = connection.connect() => {
-                    if let Err(error) = res {
-                        error!("Terminated connection with: {:?}", error);
-                    }
-                }
-                _ = cancelation_token.cancelled() => {
-                    info!("Connection task canceled");
-                }
+            if let Err(error) = connection.connect().await {
+                error!("Terminated connection with: {:?}", error);
             }
             info!(
                 "Closed connection from {:?}",
@@ -135,14 +127,16 @@ pub struct InnerConnection {
     pub(crate) socket: Arc<Mutex<TcpStream>>,
     pub(crate) data_connection: Option<Arc<Mutex<DataConnection>>>,
     pub(crate) cwd: PathBuf,
+    pub(crate) cancelation_token: CancellationToken,
 }
 
 impl InnerConnection {
-    pub fn new(socket: TcpStream, cwd: PathBuf) -> Self {
+    pub fn new(socket: TcpStream, cwd: PathBuf, cancelation_token: CancellationToken) -> Self {
         Self {
             socket: Arc::new(Mutex::new(socket)),
             data_connection: None,
             cwd,
+            cancelation_token,
         }
     }
 
@@ -204,8 +198,19 @@ impl Connection {
             .into_diagnostic()?;
 
         let mut buf = vec![];
+        let cancelation_token = self.inner.lock().await.cancelation_token.clone();
         loop {
-            let _ = reader.read_until(b'\n', &mut buf).await.into_diagnostic()?;
+            tokio::select! {
+                _ = cancelation_token.cancelled() => {
+                    write_stream.shutdown().await.into_diagnostic()?;
+                    debug!("Quitting connection {}", socket.peer_addr().unwrap());
+                    return Ok(());
+                }
+                res = reader.read_until(b'\n', &mut buf) => {
+                    res.into_diagnostic()?;
+                }
+            }
+
             let input = str::from_utf8(&buf).into_diagnostic()?.trim_end();
             debug!("Reading {:?} from stream", input);
             if input.is_empty() {
@@ -221,10 +226,6 @@ impl Connection {
             let response = self.execute_command(cmd, args, &mut write_stream).await;
             match response {
                 Ok(res) => {
-                    if cmd == "QUIT" {
-                        debug!("Quitting connection {}", socket.peer_addr().unwrap());
-                        return Ok(());
-                    }
                     if let Some(res) = res {
                         write_stream
                             .write(res.to_string().as_bytes())
@@ -260,7 +261,25 @@ impl TryFrom<TcpStream> for Connection {
 
     fn try_from(socket: TcpStream) -> Result<Self> {
         let cwd = std::env::current_dir().into_diagnostic()?;
-        let inner = InnerConnection::new(socket, cwd);
+        let inner = InnerConnection::new(socket, cwd, CancellationToken::new());
+        Ok(Self::new(inner))
+    }
+}
+
+impl TryFrom<InnerConnection> for Connection {
+    type Error = miette::Error;
+
+    fn try_from(inner: InnerConnection) -> Result<Self> {
+        Ok(Self::new(inner))
+    }
+}
+
+impl TryFrom<(TcpStream, CancellationToken)> for Connection {
+    type Error = miette::Error;
+
+    fn try_from((socket, cancelation_token): (TcpStream, CancellationToken)) -> Result<Self> {
+        let cwd = std::env::current_dir().into_diagnostic()?;
+        let inner = InnerConnection::new(socket, cwd, cancelation_token);
         Ok(Self::new(inner))
     }
 }

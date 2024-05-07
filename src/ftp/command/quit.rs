@@ -12,7 +12,7 @@ impl<'a> FTPCommand<'a> for Quit {
 
     async fn run<'b>(
         &self,
-        _connection: InnerConnectionRef,
+        connection: InnerConnectionRef,
         writer: &mut WriteHalf<'b>,
     ) -> Result<Option<StatusCode>> {
         writer
@@ -24,6 +24,7 @@ impl<'a> FTPCommand<'a> for Quit {
             .await
             .into_diagnostic()?;
         writer.shutdown().await.into_diagnostic()?;
+        connection.lock().await.cancelation_token.cancel();
 
         Ok(None)
     }
