@@ -1,9 +1,8 @@
 use miette::*;
 
 use tokio::{io::AsyncWriteExt, net::tcp::WriteHalf};
-use tracing::*;
 
-use crate::{DataConnection, FTPCommand, InnerConnectionRef, StatusCode};
+use crate::{FTPCommand, InnerConnectionRef, StatusCode};
 
 pub struct Quit;
 

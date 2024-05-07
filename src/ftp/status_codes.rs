@@ -1,3 +1,5 @@
+use std::net::Ipv4Addr;
+
 use crate::types::SystemType;
 
 /// Status codes for FTP
@@ -66,7 +68,11 @@ pub enum StatusCode {
     ClosingDataConnection,
 
     /// **227** - Entering Passive Mode (h1,h2,h3,h4,p1,p2).
-    EnteringPassiveMode { port_high: u16, port_low: u16 },
+    EnteringPassiveMode {
+        ip_address: Ipv4Addr,
+        port_high: u16,
+        port_low: u16,
+    },
 
     /// **230** - User logged in, proceed.
     UserLoggedIn,
@@ -155,6 +161,7 @@ impl StatusCode {
             StatusCode::DataOpenNoTransfer => 225,
             StatusCode::ClosingDataConnection => 226,
             StatusCode::EnteringPassiveMode {
+                ip_address: _,
                 port_high: _,
                 port_low: _,
             } => 227,
@@ -234,12 +241,22 @@ impl ToString for StatusCode {
                 format!("{} Closing data connection\n", self.code())
             }
             StatusCode::EnteringPassiveMode {
+                ip_address,
                 port_high,
                 port_low,
-            } => format!(
-                "{} Entering Passive Mode (127, 0, 0, 1, {port_high}, {port_low})\n",
-                self.code()
-            ),
+            } => {
+                let octets = ip_address.octets();
+                format!(
+                    "{} Entering Passive Mode ({}, {}, {}, {}, {}, {})\n",
+                    self.code(),
+                    octets[0],
+                    octets[1],
+                    octets[2],
+                    octets[3],
+                    port_high,
+                    port_low
+                )
+            }
             StatusCode::UserLoggedIn => "230 User logged in, proceed\n".to_string(),
             StatusCode::FileActionOk(msg) => {
                 format!("{}{msg}\n", self.code())
@@ -254,7 +271,9 @@ impl ToString for StatusCode {
                 self.code()
             ),
             StatusCode::Unnavaidable => todo!(),
-            StatusCode::CantOpenDataConnection => todo!(),
+            StatusCode::CantOpenDataConnection => {
+                format!("{} Can't open data connection\n", self.code())
+            }
             StatusCode::TransferAborted => todo!(),
             StatusCode::FileActionNotTaken => {
                 format!("{} Requested file action not taken\n", self.code())
