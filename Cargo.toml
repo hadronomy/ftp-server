@@ -4,7 +4,6 @@ authors = ["Pablo Hernandez (@Hadronomy)"]
 repository = "https://github.com/hadronomy/ftp-server"
 version = "0.1.0"
 edition = "2021"
-publish = false
 
 [dependencies]
 chrono = "0.4.38"
