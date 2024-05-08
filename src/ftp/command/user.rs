@@ -13,7 +13,7 @@ impl<'a> FTPCommand<'a> for User<'a> {
         _connection: InnerConnectionRef,
         _writer: &mut WriteHalf<'b>,
     ) -> Result<Option<StatusCode>> {
-        Ok(Some(StatusCode::UserLoggedIn))
+        Ok(Some(StatusCode::UsernameOkNeedPassword))
     }
 }
 

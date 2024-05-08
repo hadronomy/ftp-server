@@ -84,7 +84,7 @@ pub enum StatusCode {
     PathCreated(String),
 
     /// **331** - User name okay, need password.
-    UsernameOk,
+    UsernameOkNeedPassword,
 
     /// **332** - Need account for login.
     NeedLoginAccount,
@@ -168,7 +168,7 @@ impl StatusCode {
             StatusCode::UserLoggedIn => 230,
             StatusCode::FileActionOk(_) => 250,
             StatusCode::PathCreated(_) => 257,
-            StatusCode::UsernameOk => 331,
+            StatusCode::UsernameOkNeedPassword => 331,
             StatusCode::NeedLoginAccount => 332,
             StatusCode::FileActionPending => 350,
             StatusCode::Unnavaidable => 421,
@@ -264,7 +264,9 @@ impl ToString for StatusCode {
             StatusCode::PathCreated(pathname) => {
                 format!("{} \"{pathname}\" created\n", self.code())
             }
-            StatusCode::UsernameOk => todo!(),
+            StatusCode::UsernameOkNeedPassword => {
+                format!("{} User name okay, need password\n", self.code())
+            }
             StatusCode::NeedLoginAccount => format!("{} Need account for login\n", self.code()),
             StatusCode::FileActionPending => format!(
                 "{} Requested file action pending further information\n",
