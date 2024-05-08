@@ -122,7 +122,6 @@ impl From<SocketAddr> for FTPServer {
 }
 
 #[derive(Debug, Clone)]
-// client_connections: Arc::new(Mutex::new(Vec::new())),
 pub struct InnerConnection {
     pub(crate) socket: Arc<Mutex<TcpStream>>,
     pub(crate) data_connection: Option<Arc<Mutex<DataConnection>>>,
