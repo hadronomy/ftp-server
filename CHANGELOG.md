@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0](https://github.com/Hadronomy/ftp-server/releases/tag/v0.1.0) - 2024-05-08
 
+First release of the project :confetti_ball::tada::star2:
+
 ### Added
 - allow empty password
 - require password on login
