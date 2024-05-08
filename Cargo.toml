@@ -1,6 +1,7 @@
 [package]
 name = "ftp-server"
 authors = ["Pablo Hernandez (@Hadronomy)"]
+repository = "https://github.com/hadronomy/ftp-server"
 version = "0.1.0"
 edition = "2021"
 
