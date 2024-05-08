@@ -1,0 +1,4 @@
+[workspace]
+# git_release_draft = true
+git_release_enable = false
+publish = false
