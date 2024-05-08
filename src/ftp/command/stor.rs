@@ -46,7 +46,7 @@ impl<'a> FTPCommand<'a> for Stor<'a> {
 
         debug!("Data received");
 
-        Ok(Some(StatusCode::CantOpenDataConnection))
+        Ok(Some(StatusCode::ClosingDataConnection))
     }
 }
 
